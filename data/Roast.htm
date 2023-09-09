@@ -1,0 +1,707 @@
+                                                        <!DOCTYPE html lang="en" class="js-focus-visible">
+ <html>
+  </head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  
+  </head>
+  <body onload="process()">
+  <!--<body onpageshow="initData()">-->
+<header>
+ <div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menuConnect Menu" alt="AutoConnect menu"/></a></div>
+
+  <div class="container">
+   
+    <div class="navtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
+    
+  
+    <div class="bodytext">DATE: </div>
+    <div class="bodytext" id = "date">mm/dd/yyyy</div>
+    <div class="bodytext">TIME: </div>
+    <div class="bodytext" id = "time">00:00:00</div>
+    <br>
+    <div class="bodyinfo">Version: </div>
+    <div class="bodyinfo" id = "sw_version">0.00.00</div>
+  
+  </div> 
+   
+</header>
+
+  <div class="category" style=color:green>Roaster Controls</div>
+
+  <p>
+    <div>
+      <a href="SysConfig">Configuration</a><label> - </label>
+      <a href="\Graphs">Config Graphs Page</a><label> - </label>
+      <a href="\Files">File Page</a>
+    </div>
+  </p>
+ 
+ <div> 
+  <div class="bodytext" style=color:green>Roasting Info Setup</div>
+  <br>
+  <button class="btn" id="showLogDialog" >Load Settings from Roast Log</button>
+  <br>
+   
+  
+  <div class="bodytext" style=color:green>Enter Bean Qty in Oz :</div>
+  <input type="number" id = "bean_qty" min="0" max="30" step="1" value="0" size="4"  onchange="NumberInputChanged('bean_qty','BEAN_QTY_BUTTON')">Ounces</input>
+  </div>
+  <!--<div class="dropdown">
+  <button onclick="selectCoffeeFunction()" class="dropbtn">Select Coffee Variety</button>
+  <div id="myDropdown" class="dropdown-content">  -->
+   <p>Select the Coffee Variety Being Roasted:
+    <select id="coffeeType" onclick="selectCoffeeFunction()">    
+    <option value="0">Colombian </option>
+    <option value="1">Costa Rica </option>
+    <option value="2">Ethiopian</option>
+    <option value="3">Guatamalan </option>
+    </select>
+    </p>
+ <!-- </div>
+ </div> -->
+  <br>
+  <div class="bodytext">Temp Servo (Temp: <span id="servocmd"></span>)(Servo Pos: <span id="servopos"></span>)</div>
+  <br>
+  <input type="range" class="controlslider" id="tempcontrol" min="0" max="180" value = "0" width = "0%" oninput="UpdateTempSlider(this.value)"/>
+  <br>
+  <div class="bodytext">Temperature Sensor</div>
+  <br>
+  <label for="tempread" >Temperature Reading:</label>
+  <input type = "text" id = "temptxt" name = "tempread" disabled = "true" size="4">
+  <label for="tempread" id="degpref" >Celsius</label>
+  <br>
+  
+  <div> 
+  <div class="bodytext" style=color:green>Pre Heat Timer Controls</div>
+  <br>
+  <div class="bodytext" style=color:green>Set Pre-Heat Timer :</div>
+  <input type="number" id = "pmin0" min="0" max="30" step="1" value="0" size="3"  onchange="NumberInputChanged('pmin0','PRE_MIN_BUTTON_0')">Min</input>
+  
+  <input type="number" id = "psec0" min="0" max="59" step="10" value="0" size="3"  onchange="NumberInputChanged('psec0','PRE_SEC_BUTTON_0')">Sec</input>
+    </div>
+   
+  <div class="bodytext" style=color:green>Set Pre-Heat Temperature </div>
+  <label for="ptemp0" id=ptemplabel >Degrees Celsius</label>
+  <input type="number" id = "ptemp0" name="ptemp0" min="0" max="300" step="1" value="120" size="4"  onchange="NumberInputChanged('ptemp0','PRE_TEMP_BUTTON')"></input>
+  <br>
+  <button type="button" class = "btn" id = "preheatTimerbtn" onclick="ButtonPressEvent('PREHEAT_TIMER_START')">Start Preheat</button>
+  
+  <label for="pretempread" style=color:green >Preheat Time Remaining:</label>
+  <input type = "text" id = "pretimertxt" name = "pretimertime" disabled = "true" size="6"><br>
+  </div>
+  
+  <div class="bodytext" style=color:blue>Roast Timer Controls</div>
+  <br>
+  <div class="bodytext" style=color:blue>Set Roast Timer </div>
+  <input type="number" id = "min0" min="0" max="30" step="1" value="0" size="3"  onchange="NumberInputChanged('min0','MIN_BUTTON_0')">Min</input>
+  
+  <input type="number" id = "sec0" min="0" max="59" step="10" value="0" size="3"  onchange="NumberInputChanged('sec0','SEC_BUTTON_0')">Sec</input>
+    </div>
+    <br>
+ <div class="bodytext" style=color:blue>Set Final Roast Temperature </div>
+  <label for="ftemp0" id="ftemplabel">Degrees Celsius</label>
+  <input type="number" id = "ftemp0" name="ftemp0" min="0" max="300" step="1" value="180" size="4"  onchange="NumberInputChanged('ftemp0','FINAL_TEMP_BUTTON')"></input>
+  <br>
+  <!--<div class="bodytext" style=color:blue >Timer Controls</div>-->
+  <button type="button" class = "btn" id = "btn2" onclick="ButtonPressEvent('BUTTON_TIMER_START')">Start</button>
+   
+  <button type="button" class = "offButton" id = "btn3" onclick="ButtonPressEvent('BUTTON_TIMER_RESET')">Reset</button>
+  <br>
+  
+  <label for="tempread"  style=color:blue>Roast Time Remaining:</label>
+  <input type = "text" id = "timertxt" name = "timertime" disabled = "true" size="3">
+  <button type="button" class = "btn" id = "btnA" onclick="ButtonPressEvent('BUTTON_TIMER_ADD')"> + </button>
+  <button type="button" class = "btn" id = "btnB" onclick="ButtonPressEvent('BUTTON_TIMER_SUB')"> - </button>
+  <br>
+  </div>
+   <br>
+  <div> 
+  <div class="bodytext" style=color:orange >System Controls</div>
+  <br> 
+  <!--<div class="bodytext" style=color:orange>Mixer Power</div>-->
+  <button type="button" class = "offButton" id = "btn0" onclick="ButtonPressEvent('BUTTON_MIXPWR')">Toggle</button>
+  <br>
+  <!--<div class="bodytext" style=color:orange>Mixer Direction</div>-->
+  <button type="button" class = "offButton" id = "btn1" onclick="ButtonPressEvent('BUTTON_MIXDIR')">Toggle</button>
+  <br>  
+  <!--<div class="bodytext" style=color:orange>Start Heater</div>-->
+ 
+  <button type="button" class = "btn" id = "btnHeater" onclick="ButtonPressEvent('BUTTON_HEATER_PWR')">Start Heater</button>
+  <br> 
+
+  <div class="bodytext" style=color:blue >Start Roasting</div>
+  <br>
+  <button type="button" class = "btn" id = "btnStart" onclick="ButtonPressEvent('BUTTON_ROAST_START')">Start Roasting</button>
+  <br> 
+  </main>
+  <!-- Dialog box to select a file -->
+  <dialog id="roastFileDialog">
+    <form method="dialog">
+      <p>
+        <label>Select File to plot:
+          <select id="json-files"></select>
+          
+        </label>
+     </p>
+     <div>
+      <button value="cancel">Cancel</button>
+      <button id="confirmBtn" value="default">Confirm</button>
+     </div>
+   </form>
+  </body>
+  <!-- -->
+  <script type = "text/javascript">
+  
+  <!-- dialog stuff -->
+  const showLogDialog = document.getElementById('showLogDialog');
+  const roastFileDialog = document.getElementById('roastFileDialog');
+  const outputBox = document.querySelector('output');
+  const selectEl = roastFileDialog.querySelector('select');
+  //const confirmBtn = roastFileDialog.querySelector('#confirmBtn');
+  
+  var path = document.createElement("input");
+  // "Update details" button opens the <dialog> modally
+  showLogDialog.addEventListener('click', () => {
+    path = '/';
+    httpGet("roastFileDialog",path);
+
+    
+  });
+  // "Favorite animal" input sets the value of the submit button
+  selectEl.addEventListener('change', (e) => {
+    confirmBtn.value = selectEl.value;
+    console.log("DEBUG Roast showLogDialog::change selectEl Value= ",selectEl.value, " confirmBtn value = ", confirmBtn.value);
+    RoastFileSelected(selectEl.value,confirmBtn.value);
+  });
+// "Confirm" button of form triggers "close" on dialog because of [method="dialog"]
+  showLogDialog.addEventListener('close', () => {
+    
+    outputBox.value = `ReturnValue: ${roastFileDialog.returnValue}.`;
+    console.log("DEBUG Roast showLogDialog::close returnValue= ",roastFileDialog.returnValue, " outputBox value = ", outputBox.value);
+  });
+  // Do something with the data returned from httpGet 
+  function getCallback(parent, path){
+    console.log("DEBUG Roast::getCallback parent= ",parent, " path = ", path);
+    return function(){
+      if (xmlHttp.readyState == 4){
+        //clear loading
+        if(xmlHttp.status == 200) addList(parent, path, JSON.parse(xmlHttp.responseText));
+      }
+    }
+  }
+  // Get the directory list
+  function httpGet(parent, path){
+    xmlHttp = new XMLHttpRequest(parent, path);
+    xmlHttp.onreadystatechange = getCallback(parent, path);
+    xmlHttp.open("GET", "/list?dir="+path, true);
+    xmlHttp.send(null);
+    //start loading
+  }
+  // Add files to dialog options...
+  function addList(parent, path, items){
+    console.log("DEBUG Roast::addList parent= ",parent, " path = ", path, " items=",items);
+    var select= document.getElementById("json-files");
+    select.options.length=0; // new list every time?
+   
+    var ll = items.length;
+    for(var i = 0; i < ll; i++){
+      var item = items[i];
+      var itemEl;
+      if(item.type === "file" && item.name.match("json")){
+        console.log("DEBUG Roast::addList Leaf item.name= ",item.name);
+        select.options[select.options.length] = new Option(item.name);
+        //itemEl = createTreeLeaf(path, item.name, item.size);
+      } else {
+        console.log("DEBUG Roast::addList Branch item.name= ",item.name);
+        //itemEl = createTreeBranch(path, item.name);
+      }
+      //list.appendChild(itemEl);
+    }
+    // pop up the dialog
+    roastFileDialog.showModal();
+    console.log("DEBUG Roast addList confirmBtn value = ", confirmBtn.value);
+  }
+<!-- end of dialog stuff -->
+  
+  var xmlHttp=createXmlHttpObject();
+  var timeoutValue = 500; //.5 sec
+  var tempPref = 0;
+  var tempPrefNew=0;
+  var tempVal=0;
+  var pageNew=0;
+  var tempSliderPos=0;
+    function createXmlHttpObject(){
+        if(window.XMLHttpRequest){
+            xmlHttp=new XMLHttpRequest();
+        }
+        else {
+            xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        return xmlHttp;
+    }
+    
+
+    
+    function response(){
+        var message;
+        var barwidth;
+        var currentsensor;
+        var xmlResponse;
+        var xmldoc;
+        var dt = new Date();
+        var color = "#e8e8e8";
+        // get Xml stream
+        xmlResponse=xmlHttp.responseXML;
+        // get host date and time
+        document.getElementById("time").innerHTML = dt.toLocaleTimeString();
+        document.getElementById("date").innerHTML = dt.toLocaleDateString();
+ 
+        // Mixer Power Button
+        if ( xmlResponse ) { // skip if no response
+            xmldoc = xmlResponse.getElementsByTagName("MIX");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {
+                    document.getElementById("btn0").innerHTML = "Turn Mixer On";
+                    document.getElementById("btn0").setAttribute("class" , "offButton");
+                }else { // 
+                    document.getElementById("btn0").innerHTML = "Turn Mixer Off";
+                    document.getElementById("btn0").setAttribute("class" , "onButton");
+                }
+            }  
+  
+    // Mixer Direction Button
+            xmldoc = xmlResponse.getElementsByTagName("MIXDIR");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {
+                    document.getElementById("btn1").innerHTML = "Mixer Dir Forward";
+                    document.getElementById("btn1").setAttribute("class" , "offButton");
+                }
+                else { // 
+                    document.getElementById("btn1").innerHTML = "Mixer Dir Reverse";
+                    document.getElementById("btn1").setAttribute("class" , "redButton");
+                }
+            }
+ // Preheat Start/Stop
+            xmldoc = xmlResponse.getElementsByTagName("PTSTART");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// timer stopped
+                    document.getElementById("preheatTimerbtn").innerHTML = "Start Preheat";
+                    document.getElementById("preheatTimerbtn").setAttribute("class" , "offButton");
+                    document.getElementById("pmin0").disabled = false;
+                    document.getElementById("psec0").disabled = false;
+                }
+                else { // 
+                    document.getElementById("preheatTimerbtn").innerHTML = "Stop Preheat";
+                    document.getElementById("preheatTimerbtn").setAttribute("class" , "onButton");
+                    document.getElementById("pmin0").disabled = true;
+                    document.getElementById("psec0").disabled = true;
+                }
+            }
+  
+  
+ // Timer Start/Stop
+            xmldoc = xmlResponse.getElementsByTagName("TSTART");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// timer stopped
+                    document.getElementById("btn2").innerHTML = "Start Roast Timer";
+                    document.getElementById("btn2").setAttribute("class" , "offButton");
+                    document.getElementById("min0").disabled = false;
+                    document.getElementById("sec0").disabled = false;
+                }
+                else { // 
+                    document.getElementById("btn2").innerHTML = "Stop Roast Timer";
+                    document.getElementById("btn2").setAttribute("class" , "onButton");
+                    document.getElementById("min0").disabled = true;
+                    document.getElementById("sec0").disabled = true;
+                }
+            }
+  
+ // Heater power Button
+            xmldoc = xmlResponse.getElementsByTagName("HEATER");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// SSR logic reversed
+                    document.getElementById("btnHeater").innerHTML = "Turn Heater On";
+                    document.getElementById("btnHeater").setAttribute("class" , "offButton");
+                }
+                else { // 
+                    document.getElementById("btnHeater").innerHTML = "Turn Heater Off";
+                    document.getElementById("btnHeater").setAttribute("class" , "onButton");
+                } 
+            }
+    
+ // Roasting Start/Stop
+            xmldoc = xmlResponse.getElementsByTagName("ROASTING");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                tmessage = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// timer stopped
+                    document.getElementById("btnStart").innerHTML = "Start Roasting";
+                    document.getElementById("btnStart").setAttribute("class" , "offButton");
+                    document.getElementById("min0").disabled = false;
+                    document.getElementById("sec0").disabled = false;
+                }
+                else { // 
+                    document.getElementById("btnStart").innerHTML = "Stop Roasting";
+                    document.getElementById("btnStart").setAttribute("class" , "onButton");
+                    document.getElementById("min0").disabled = true;
+                    document.getElementById("sec0").disabled = true;
+                }
+            }
+
+  // Temperature Data check temp preference
+            xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// Celsius
+                    tempPref = 0;
+                    xmldoc = xmlResponse.getElementsByTagName("TEMPC");
+                    if(xmldoc.length >0 ) //Check for valid response
+                    {
+                        message = xmldoc[0].firstChild.nodeValue;
+                        document.getElementById("ptemplabel").innerHTML = 'Degrees Celsius';
+                        document.getElementById("ftemplabel").innerHTML = 'Degrees Celsius';
+                        document.getElementById("degpref").innerHTML = 'C';
+                    } //
+                }
+                else {// Fahrenheit  //
+                    tempPref = 1;
+                    document.getElementById("ptemplabel").innerHTML = 'Degrees Fahrenheit';
+                    document.getElementById("ftemplabel").innerHTML = 'Degrees Fahrenheit';
+                    document.getElementById("degpref").innerHTML = 'F';
+                    xmldoc = xmlResponse.getElementsByTagName("TEMPF");
+                    if(xmldoc.length >0 ) //Check for valid response
+                    {
+                        message = xmldoc[0].firstChild.nodeValue;
+                    } //
+                } //
+                document.getElementById("temptxt").value = message;
+            }
+  
+  
+  
+  // Roast Timer Value Data
+  // Timer Settings Data
+          xmldoc = xmlResponse.getElementsByTagName("TMIN0");
+          if(xmldoc.length >0 ) //Check for valid response
+          {
+            message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("min0").value = message;
+          }
+          
+            xmldoc = xmlResponse.getElementsByTagName("TIMEREM0");
+            message = xmldoc[0].firstChild.nodeValue;
+            document.getElementById("timertxt").value = message;
+            
+ 
+            xmldoc = xmlResponse.getElementsByTagName("PRE_TIMEREM0");
+            message = xmldoc[0].firstChild.nodeValue;
+            document.getElementById("pretimertxt").value = message;
+            
+            xmldoc = xmlResponse.getElementsByTagName("SERVO_POS");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                document.getElementById("servopos").innerHTML=message;
+  
+            }
+                       
+            xmldoc = xmlResponse.getElementsByTagName("SERVO_POS_NEW");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                document.getElementById("servocmd").innerHTML=message;
+                //console.log("Servo Pos New = ", message);
+                              // If the new position is not the old position
+                // update the slider to match it...
+                if ( tempSliderPos != message)
+                {
+                   tempSliderPos=message;
+                   document.getElementById("tempcontrol").value = message;
+                }
+            }
+            // Get initial data or page
+            if (pageNew == 0 )
+            {
+                //console.log("Roast response pageNew = ", pageNew);
+                pageNew=1;
+                // Version  Data
+                xmldoc = xmlResponse.getElementsByTagName("VERSION");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                  message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("sw_version").innerHTML = message;
+                }
+                // Timer Settings Data
+                xmldoc = xmlResponse.getElementsByTagName("TMIN0");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                  message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("min0").value = message;
+                }
+
+                
+                xmldoc = xmlResponse.getElementsByTagName("TSEC0");              
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("sec0").value = message;
+                }
+                // Preheat Timer Settings Data
+                xmldoc = xmlResponse.getElementsByTagName("PRE_TMIN0");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                    message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("pmin0").value = message;
+                }
+   
+                xmldoc = xmlResponse.getElementsByTagName("PRE_TSEC0");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("psec0").value = message;
+                }    
+                  
+                xmldoc = xmlResponse.getElementsByTagName("SERVO_POS");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("tempcontrol").value = message;
+                   //tempSliderPos=message
+                   //UpdateTempSlider(message);
+                }  
+                
+                xmldoc = xmlResponse.getElementsByTagName("BEAN_QTY");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("bean_qty").value = message;
+                    
+                }  
+                // coffeeType
+                //document.getElementById("coffeeType").selectedIndex=cCoffeeOpt ;
+                selectCoffeeFunction();
+            }
+ 
+        }//End of check for xmlResponse
+  
+  }//End of response()\n // end of response()
+
+  
+  function RoastFileSelected(filename,confirm){
+    var xhttp = new XMLHttpRequest;
+    var jdoc;
+    
+    var SendString = "ROAST_LOG_REQ";
+    
+    var returnString = "SetRoastSettings?VALUE=";
+    var data = filename;
+    // set up to request the file 
+    SendString = SendString+"?VALUE="+data;
+    xhttp.open("PUT",SendString,true);
+    xhttp.send();
+    xhttp.onload = function() {
+      if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+      } else {
+       jdoc=JSON.parse(xhttp.responseText);
+       const Roast_Date = jdoc["Roasting Log Date"]; // "1970/01/01(Thr)00:02:01"
+       console.log('Roast Roast_Date = ',Roast_Date);
+       const cBeanQty = jdoc["Bean Quantity (ounces)"]; // "12"
+       const cCoffeeType = jdoc["Coffee Type"]; // "Columbian"
+       const cCoffeeOpt = jdoc["Coffee Opt"]; // "Columbian"
+       const cPreheatTime = jdoc["Preheat Time (sec)"]; // "12"
+       const cPreheatTemp = jdoc["Preheat Temp degrees C "]; // "12"
+       const cPreheatServoPos = jdoc["Preheat Servo Pos"]; // "12"
+       const cRoastTime = jdoc["Roast Time (sec)"]; // "12"
+       const cFinishTemp = jdoc["Finish Temp degrees C "]; // "12"
+       var value=0;
+       document.getElementById("ptemp0").value=cPreheatTemp;
+       NumberInputChanged('ptemp0','PRE_TEMP_BUTTON');
+       
+       document.getElementById("pmin0").value=Math.floor(cPreheatTime/60);
+       NumberInputChanged('pmin0','PRE_MIN_BUTTON_0');
+  
+       document.getElementById("psec0").value=Math.floor(cPreheatTime%60); 
+       NumberInputChanged('psec0','PRE_SEC_BUTTON_0');
+       
+       document.getElementById("min0").value=Math.floor(cRoastTime/60);
+       NumberInputChanged('min0','MIN_BUTTON_0');
+       document.getElementById("sec0").value=Math.floor(cRoastTime%60);
+       NumberInputChanged('sec0','SEC_BUTTON_0')
+       
+       document.getElementById("ftemp0").value=cFinishTemp;
+       NumberInputChanged('ftemp0','FINAL_TEMP_BUTTON');
+       document.getElementById("bean_qty").value=cBeanQty;
+       NumberInputChanged('bean_qty','BEAN_QTY_BUTTON');
+       // coffeeType
+       document.getElementById("coffeeType").selectedIndex=cCoffeeOpt ;
+        selectCoffeeFunction();
+       //const cselect  document.querySelector('#coffeeType');
+       //cselect.selectedIndex='cCoffeeOpt
+       
+       const cFinishServoPos = jdoc["Finish Servo Pos"]; // "12"
+       const HeatGunSpeed = jdoc["Heatgun Speed"]; // "12" 
+       if (HeatGunSpeed == "High")
+       {
+          value = 1;
+       }
+       UpdateHeatGunSetting(value);
+      
+       
+       var outData = {
+          "Roasting Log Date": Roast_Date,
+          "Bean Quantity (ounces)": cBeanQty,
+          "Preheat Time (sec)": cPreheatTime,
+          "Preheat Temp degrees C ": jdoc["Preheat Temp degrees C "],
+          "Preheat Servo Pos": jdoc["Preheat Servo Pos"],
+          "Roast Time (sec)": jdoc["Roast Time (sec)"],
+          "Finish Temp degrees C ": jdoc["Finish Temp degrees C "],
+          "Finish Servo Pos": jdoc["Finish Servo Pos"],
+          "Heatgun Speed":jdoc["Heatgun Speed"]
+       }
+       console.log("outData=", outData);
+       console.log("json outData=",JSON.stringify( outData));
+       // Don't really have to do this...
+       returnString = returnString + JSON.stringify(outData);
+       xhttp.open("PUT",returnString,true);
+       xhttp.send();
+      }
+    }
+ }
+ 
+  function NumberInputChanged(element,retstr){
+    var xhttp = new XMLHttpRequest;
+    var returnString = retstr+"?VALUE=";
+    var data = document.getElementById(element).value;
+ 
+    if(data.length >0 ) //Check for valid response
+	{
+        xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status ==200) {
+            // check for ptemp0 and ftemp0 
+            if (tempPref == 1)
+            {
+                if ( (element == "ptemp0") || ( element == "ftemp0") )
+                {
+                    tempVal=CelsiusToF(this.responseText)
+                    document.getElementById(element).value=tempVal;
+                }
+            
+            }else {
+                document.getElementById(element).value=this.responseText;
+            }
+                
+		}
+        }
+		xhttp.open("PUT",returnString+data,true);
+		xhttp.send();
+	}
+       
+    
+  //"console.log('TimerMinute value has been changed! '); 
+  } // end of function
+  
+function UpdateHeatGunSetting(value){
+	var xhttp = new XMLHttpRequest;
+	timeoutValue = 100 ;
+	//xhttp.onreadystatechange = function() {
+	//	if (this.readyState == 4 && this.status ==200) {
+	//	document.getElementById("servocmd").innerHTML=this.responseText;
+	//	}
+	//}
+	// syntax is really weird
+	xhttp.open("PUT","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
+	xhttp.send();
+} 
+
+    
+function UpdateTempSlider(value){
+	var xhttp = new XMLHttpRequest;
+	timeoutValue = 100 ;
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status ==200) {
+		//console.log("UpdateTempSlider response  = ", this.responseText);
+		document.getElementById("servocmd").innerHTML=this.responseText;
+		tempSliderPos=this.responseText;
+		}
+	}
+	
+	// syntax is really weird
+	xhttp.open("PUT","UPDATE_TEMP_SLIDER?VALUE="+value,true);
+	xhttp.send();
+}
+ 
+ function ButtonPressEvent(sendstr){
+	var xhttp = new XMLHttpRequest;
+	var message;
+	var SendString = "sendstr+";
+	if (sendstr == "TEMP_CONFIG_REQ") {
+        xhttp.open("GET",sendstr,true);
+	} else {
+		xhttp.open("PUT",sendstr,true);
+    }
+	xhttp.send();
+	xhttp.onload = function() {
+	if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+        //} else {
+        //alert(`Loaded got ${xhttp.response.length} bytes status: ${xhttp.status} ${xhttp.response}`);
+        }
+    };
+}
+
+function CelsiusToF(tempC) {
+// formula is C * 9/5 +32
+  tempVal = (tempC * 9/5) +32;
+  return tempVal;
+}
+
+function SecondsToMinutes(secs) {
+// 
+  minVal = secs/60;
+  return minVal;
+}
+
+function process(){
+    //console.log("Roast process()");
+    if(xmlHttp.readyState==0 || xmlHttp.readyState == 4){
+        xmlHttp.open("PUT","xml",true);
+        xmlHttp.onreadystatechange=response;
+        xmlHttp.send(null);
+    }
+  // might haveto play with timeout value
+    setTimeout("process()",timeoutValue);
+  }// End of process()
+
+
+function selectCoffeeFunction() {
+  var e= document.getElementById("coffeeType");
+  var value=e.value;
+  var data = e.options[e.selectedIndex].text;
+  var xhttp = new XMLHttpRequest;
+  var returnString = "COFFEE_TYPE?VALUE="+value+"&TEXT="+data;
+  
+ 
+  if(data.length >0 ) //Check for valid response
+  {
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status ==200) {
+      }
+    }
+  }
+  xhttp.open("PUT",returnString,true);
+  xhttp.send();
+}
+
+
+  </script>
+  </html>

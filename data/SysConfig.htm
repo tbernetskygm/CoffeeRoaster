@@ -1,0 +1,390 @@
+ <!DOCTYPE html lang="en" class="js-focus-visible">
+  </head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  
+  </head>
+<body onload = "processConfig()" >
+<header>
+<div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menu" alt="AutoConnect menu"/></a></div>
+<div class="container">
+  <div class="navtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
+  <div class="bodytext">DATE: </div>
+  <div class="bodytext" id = "date">mm/dd/yyyy</div>
+  <div class="bodytext">TIME: </div>
+  <div class="bodytext" id = "time">00:00:00</div>
+  <br>
+    <div class="bodyinfo">Version: </div>
+    <div class="bodyinfo" id = "sw_version">0.00.00</div>
+</div>
+
+</header>
+<main>
+
+<div class="category">Roaster Configuration Controls</div>
+
+    <p>
+      <div>
+        <a href="\Roast">Main Page</a><label> - </label>
+        <a href="\Graphs">Config Graphs Page</a><label> - </label>
+        <a href="\Files">File Page</a>
+      </div>
+    </p>
+<form>
+<div class="bodytext">Heat Gun High/Low Switch</div>
+<br>
+<div class="bodyinfo">Low</div>
+<input type="range" class="toggleslider" id="heatgun" min="0" max="1" value = "0" width = "0%" oninput="UpdateHeatGunSetting(this.value)"/>
+<div class="bodyinfo">High</div>
+<br>
+
+<div class="bodytext">Select Temperature readout preference </div>
+<br>
+<input type="radio" id="tempF" name="temp_preference" value="F" onchange="TempConfigChanged()">
+<label for="tempF">F</label>
+<input type="radio" id="tempC" name="temp_preference" value="C" onchange="TempConfigChanged()" checked >
+<label for="tempC">C</label><br>
+</form>
+<br>
+<form>
+
+<div class="bodytext">Redirect Serial Port to file </div>
+<br>
+<input type="radio" id="redirP1" name="redir_file" value="0" onchange="RedirectChanged()" checked>
+<label for="redirP1">Send to Serial Port</label>
+<input type="radio" id="redirP2" name="redir_file" value="1" onchange="RedirectChanged()">
+<label for="redirP2">Send to Log File</label><br>
+</form>
+<br>
+<div class="bodytext">Temp Servo (Pos: <span id="servocmd"></span>)(Act Pos: <span id="servopos"></span>)</div>
+<br>
+<input type="range" class="controlslider" id="tempcontrol" min="0" max="180" value = "0" width = "0%" oninput="UpdateTempSlider(this.value)"/>
+<br>
+
+<div>
+<div class="bodytext">Set Temp Config Steps </div>
+<input type="number" id = "maxsteps" min="0" max="360" step="1" value="1" size="4"  onchange="NumberInputChanged('maxsteps','TEMP_CONFIG_MAX_STEPS')">Max Number of steps</input>
+</div>
+
+<div>
+<div class="bodytext">Set Temp Config Step Time </div>
+<input type="number" id = "configtimestep" min="1" max="360" step="1" value="0" size="4"  onchange="NumberInputChanged('configtimestep','TEMP_CONFIG_STEP_TIME')">Time for each step (seconds)</input>
+</div>
+
+  <label for="tempread" >Temperature Reading:</label>
+  <input type = "text" id = "temptxt" name = "tempread" disabled = "true" size="4">
+  <label for="tempread" id="degpref" >Celsius</label>
+<br>
+<div class="bodytext">Start Temp Config</div>
+<br>
+<button type="button" class = "btn" id = "btnTempConfigStart" onclick="ButtonPressEvent('START_TEMP_CONFIG')">Start Temp Config</button>
+<br>
+<label for="ctimertime" >Config Time Remaining:</label>
+<input type = "text" id = "ctimertxt" name = "ctimertime" disabled = "true" size="6">
+<label for="cstep" >Configuration Step:</label>
+<input type = "text" id = "cstep" name = "cstepdisp" disabled = "true" size="4">
+<br>
+</div>
+<br>
+<div class="bodytext">Request Temp Config Data</div>
+<br>
+<button type="button" class = "btn" id = "btnTempConfigRequest" onclick="ButtonPressEvent('TEMP_CONFIG_REQ')">Request Temp Data</button>
+<button type="button" class = "btn" id = "btnTempConfigDownload" onclick="ButtonPressEventDownload('download_config')">Download Config Data</button>
+<button type="button" class = "btn" id = "btnRoastLogDownload" onclick="ButtonPressEventDownload('download_log')">Download Roast Log Data</button>
+<br>
+</main>
+</body>
+<script type = "text/javascript">
+var xmlHttp=createXmlHttpObject();
+var timeoutValue = 1000;
+var tempPref = 0;
+var pageNew=0;
+function createXmlHttpObject(){
+	if(window.XMLHttpRequest){
+		xmlHttp=new XMLHttpRequest();
+	}
+	else {
+		xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	return xmlHttp;
+}
+
+function response(){
+	var message;
+	var barwidth;
+	var currentsensor;
+	var xmlResponse;
+	var xmldoc;
+	var txtdoc;
+	var otherResponse;
+	var dt = new Date();
+	var color = "#e8e8e8";
+	// get Xml stream
+	xmlResponse=xmlHttp.responseXML;
+	otherResponse=xmlHttp.response;
+	// get host date and time
+	document.getElementById("time").innerHTML = dt.toLocaleTimeString();
+	document.getElementById("date").innerHTML = dt.toLocaleDateString();
+	if (otherResponse) {
+        txtdoc = otherResponse.responseType;
+	}
+	if ( xmlResponse ) {
+	
+		xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
+		if(xmldoc.length >0 ) //Check for valid response
+		{
+			message = xmldoc[0].firstChild.nodeValue;
+			if ( message == 0 ) {
+				document.getElementById("tempC").checked = true;
+			}
+			else {
+				document.getElementById("tempF").checked = true;
+			}
+		}
+        message=xmlResponse.documentElement.tagName
+ 
+		xmldoc = xmlResponse.getElementsByTagName("CSTEP");
+		if(xmldoc.length >0 ) //Check for valid response
+		{
+			for(i = 0; i < xmldoc.length; i++) {
+			message = xmldoc[i].firstChild.nodeValue;
+			}
+		}
+		
+		xmldoc = xmlResponse.getElementsByTagName("SERVO_POS");
+		if(xmldoc.length >0 ) //Check for valid response
+		{
+			message = xmldoc[0].firstChild.nodeValue;
+			document.getElementById("servopos").innerHTML=message;
+		}
+		 // Timer Value Data
+        xmldoc = xmlResponse.getElementsByTagName("CTIMEREM");
+        if(xmldoc.length >0 ) //Check for valid response
+		{
+            message = xmldoc[0].firstChild.nodeValue;
+            document.getElementById("ctimertxt").value = message;
+        }
+		 // Configuration step Data
+        xmldoc = xmlResponse.getElementsByTagName("C_STEP");
+        if(xmldoc.length >0 ) //Check for valid response
+		{
+            message = xmldoc[0].firstChild.nodeValue;
+            document.getElementById("cstep").value = message;
+        }
+          // Temperature Data check temp preference
+        xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
+        if(xmldoc.length >0 ) //Check for valid response
+        {
+            message = xmldoc[0].firstChild.nodeValue;
+            if ( message == 0 ) {// Celsius
+                tempPref = 0;
+                xmldoc = xmlResponse.getElementsByTagName("TEMPC");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                    message = xmldoc[0].firstChild.nodeValue;
+                    document.getElementById("degpref").innerHTML = 'C';
+                } //
+            }
+            else {// Fahrenheit  //
+                tempPref = 1;
+                document.getElementById("degpref").innerHTML = 'F';
+                xmldoc = xmlResponse.getElementsByTagName("TEMPF");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                    message = xmldoc[0].firstChild.nodeValue;
+                } //
+            } //
+            document.getElementById("temptxt").value = message;
+        }
+        // Get initial data or page
+        if (pageNew == 0)
+        {
+            console.log("SysConfig response pageNew = ", pageNew);
+            pageNew=1;
+			// Version  Data
+			xmldoc = xmlResponse.getElementsByTagName("VERSION");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("sw_version").innerHTML = message;
+			}
+			xmldoc = xmlResponse.getElementsByTagName("SERVO_POS");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("tempcontrol").value = message;
+			}    
+			xmldoc = xmlResponse.getElementsByTagName("HEATGUN");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("heatgun").value = message;
+			}  
+			xmldoc = xmlResponse.getElementsByTagName("C_MAXSTEPS");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("maxsteps").value = message;
+			}
+			xmldoc = xmlResponse.getElementsByTagName("C_STEP_TIME");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("configtimestep").value = message;
+			}
+        }
+	}
+
+}//End of function()
+
+function TempConfigChanged(){
+	var xhttp = new XMLHttpRequest;
+	var data = document.getElementsByName("temp_preference");
+		if(data.length >0 ) //Check for valid response
+		{
+			for(i = 0; i < data.length; i++) {
+				if(data[i].checked){
+					xhttp.open("PUT","TEMP_PREF?VALUE="+data[i].value,true);
+					xhttp.send();
+				}
+			}
+		}
+}
+
+
+function RedirectChanged(){
+		var xhttp = new XMLHttpRequest;
+		var data = document.getElementsByName("redir_file");
+		if(data.length >0 ) //Check for valid response
+		{
+			for(i = 0; i < data.length; i++) {
+				if(data[i].checked){
+					xhttp.open("PUT","REDIRECT?VALUE="+data[i].value,true);
+					xhttp.send();
+				}
+			}
+		}
+}
+
+function TempProbeChanged(){
+		var xhttp = new XMLHttpRequest;
+		var data = document.getElementsByName("temp_probe");
+		if(data.length >0 ) //Check for valid response
+		{
+			for(i = 0; i < data.length; i++) {
+				if(data[i].checked){
+					xhttp.open("PUT","TEMP_PROBE?VALUE="+data[i].value,true);
+					xhttp.send();
+				}
+			}
+		}
+}
+
+function NumberInputChanged(element,retstr){
+	var xhttp = new XMLHttpRequest;
+	var returnString = retstr+"?VALUE=";
+	var data = document.getElementById(element).value;
+	if(data.length >0 ) //Check for valid response
+	{
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status ==200) {
+            document.getElementById(element).value=this.responseText;
+		}
+        }
+		xhttp.open("PUT",returnString+data,true);
+		xhttp.send();
+	}
+}
+
+function UpdateTempSlider(value){
+	var xhttp = new XMLHttpRequest;
+	timeoutValue = 100 ;
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status ==200) {
+		document.getElementById("servocmd").innerHTML=this.responseText;
+		}
+	}
+	// syntax is really weird
+	xhttp.open("PUT","UPDATE_TEMP_SLIDER?VALUE="+value,true);
+	xhttp.send();
+}
+
+function UpdateHeatGunSetting(value){
+	var xhttp = new XMLHttpRequest;
+	timeoutValue = 100 ;
+	//xhttp.onreadystatechange = function() {
+	//	if (this.readyState == 4 && this.status ==200) {
+	//	document.getElementById("servocmd").innerHTML=this.responseText;
+	//	}
+	//}
+	// syntax is really weird
+	xhttp.open("PUT","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
+	xhttp.send();
+}
+function ButtonPressEvent(sendstr){
+	var xhttp = new XMLHttpRequest;
+	var message;
+	var SendString = "sendstr+";
+	if (sendstr == "TEMP_CONFIG_REQ") {
+        xhttp.open("GET",sendstr,true);
+	} else {
+		xhttp.open("PUT",sendstr,true);
+    }
+	xhttp.send();
+	xhttp.onload = function() {
+	if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+        } //else {
+        //alert(`Loaded got ${xhttp.response.length} bytes status: ${xhttp.status} ${xhttp.response}`);
+        //}
+    };
+}
+
+function ButtonPressEventDownload(sendstr){
+	var xhttp = new XMLHttpRequest;
+	var message;
+	var SendString = "sendstr+";
+	var Filename;
+	message = document.getElementById("heatgun").value;
+	if (sendstr == "download_log") {
+	    //if( message == 0) {
+		//	Filename="RoastLog.json";
+		//} else {
+		//	Filename="RoastLogHigh.json";
+		//}
+        xhttp.open("GET",sendstr,true);
+	} else if (sendstr == "download_config"){
+		//    if( message == 0) {
+		//	Filename="TempConfig.json";
+		//} else {
+		//	Filename="TempConfigHigh.json";
+		//}
+		xhttp.open("GET",sendstr,true);
+    }
+	xhttp.send();
+	xhttp.onload = function() {
+	if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+        } 
+        //else {
+        //alert(`Loaded got ${xhttp.response.length} bytes status: ${xhttp.status} ${xhttp.response}`);
+        //}
+    };
+}
+
+function processConfig(){
+
+	if(xmlHttp.readyState==0 || xmlHttp.readyState == 4){
+	var responseType = xmlHttp.responseType;
+  
+	    xmlHttp.open("PUT","xml",true);
+	    xmlHttp.onreadystatechange=response;
+		xmlHttp.send(null);
+
+		
+	}
+	// might haveto play with timeout value
+	setTimeout("processConfig()",timeoutValue);
+}
+
+</script>
+</html>

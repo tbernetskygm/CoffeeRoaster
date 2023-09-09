@@ -1,0 +1,551 @@
+ <!DOCTYPE html lang="en" class="js-focus-visible">
+  </head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+<body onload = "processGraph()" >
+<!--<body  >-->
+<header>
+<div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menu" alt="AutoConnect menu"/></a></div>
+	<div class="container">
+	<div class=
+avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
+   <div class="bodytext">DATE: </div>
+    <div class="bodytext" id = "date">mm/dd/yyyy</div>
+    <div class="bodytext">TIME: </div>
+    <div class="bodytext" id = "time">00:00:00</div>
+</div>
+</div>
+</header>
+<main>
+<br>
+<div class="bodytext">Roaster Configuration Graphs</div>
+
+    <p>
+      <div>
+        <a href="\Roast">Main Page</a><label> - </label>
+        <a href="SysConfig">Configuration</a><label> - </label>
+        <a href="\Files">File Page</a>
+      </div>
+    </p>
+
+  <div class="bodytext">Set Update Rate Sec </div>
+  <input type="number" id = "updateRate" min="1" max="60" step="1" value="30" size="4"  onchange="NumberInputChanged('updateRate','UPDATE_RATE')">Seconds Per Update</input>
+  </div>
+  <br>
+  <div class="bodytext">Request Temp Config Data</div>
+  <button type="button" class = "btn" id = "btnTempConfigRequest"   onclick="ButtonPressEvent('TEMP_CONFIG_REQ')">Plot Temp Config Data</button>
+  
+  <p>
+    <button class="btn" id="showLogDialog" >Select Roast Log</button>
+  </p>
+  <div class="bodytext">Request Roast Log Data</div>
+  <button type="button" class = "btn" id = "btnTempConfigRequest" onclick="ButtonPressEvent('ROAST_LOG_REQ','confirmBtn')">Plot Roast Log Data</button>
+  <!--<div class="bodytext">Heap Graph</div>
+  <div id="heap"></div>-->
+  <div class="bodytext">Temp Graph</div>
+  <div id="tempGraph" class="container"></div>
+  <div class="bodytext">Temp Config Graph</div>
+  <div id="tempConfigGraph" class="container"></div>
+  <div class="bodytext">Roast Log Graph</div>
+  <div id="roastLogGraph" class="container"></div>
+  <!--<div class="bodytext">Digital Graph</div>
+  <div id="digital"></div>-->
+
+<!-- Dialog box to select a file -->
+<dialog id="roastFileDialog">
+  <form method="dialog">
+    <p>
+      <label>Select File to plot:
+        <select id="json-files"></select>
+        <!--  <option value="default">Choose..</option>
+          <option>Koala Bear</option>
+          <option>Hedgehog</option>
+        </select>-->
+      </label>
+    </p>
+    <div>
+      <button value="cancel">Cancel</button>
+      <button id="confirmBtn" value="default">Confirm</button>
+    </div>
+  </form>
+</body>
+<!--<script type="text/javascript" src="graphs.js"></script>-->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<!--<script type="text/javascript" src="chart.js"></script>-->
+<script type = "text/javascript">
+<!-- dialog stuff -->
+  const showLogDialog = document.getElementById('showLogDialog');
+  const roastFileDialog = document.getElementById('roastFileDialog');
+  const outputBox = document.querySelector('output');
+  const selectEl = roastFileDialog.querySelector('select');
+  //const confirmBtn = roastFileDialog.querySelector('#confirmBtn');
+  
+  var path = document.createElement("input");
+  // "Update details" button opens the <dialog> modally
+  showLogDialog.addEventListener('click', () => {
+    path = '/';
+    httpGet("roastFileDialog",path);
+
+    //roastFileDialog.showModal();
+  });
+  // "Favorite animal" input sets the value of the submit button
+  selectEl.addEventListener('change', (e) => {
+    confirmBtn.value = selectEl.value;
+    console.log("DEBUG showLogDialog::change selectEl Value= ",selectEl.value, " confirmBtn value = ", confirmBtn.value);
+  });
+// "Confirm" button of form triggers "close" on dialog because of [method="dialog"]
+  showLogDialog.addEventListener('close', () => {
+    
+    outputBox.value = `ReturnValue: ${roastFileDialog.returnValue}.`;
+    console.log("DEBUG showLogDialog::close returnValue= ",roastFileDialog.returnValue, " outputBox value = ", outputBox.value);
+  });
+  // Do something with the data returned from httpGet 
+  function getCallback(parent, path){
+    console.log("DEBUG Graphs::getCallback parent= ",parent, " path = ", path);
+    return function(){
+      if (xmlHttp.readyState == 4){
+        //clear loading
+        if(xmlHttp.status == 200) addList(parent, path, JSON.parse(xmlHttp.responseText));
+      }
+    }
+  }
+  // Get the directory list
+  function httpGet(parent, path){
+    xmlHttp = new XMLHttpRequest(parent, path);
+    xmlHttp.onreadystatechange = getCallback(parent, path);
+    xmlHttp.open("GET", "/list?dir="+path, true);
+    xmlHttp.send(null);
+    //start loading
+  }
+  // Add files to dialog options...
+  function addList(parent, path, items){
+    console.log("DEBUG Graphs::addList parent= ",parent, " path = ", path, " items=",items);
+    var select= document.getElementById("json-files");
+    select.options.length=0; // new list every time?
+    //for (index in items) {
+    //  select.options[select.options.length] = new Option(path[index],path.name);
+    //}
+    //var list = document.createElement("option");
+    //parent.appendChild(list);
+    var ll = items.length;
+    for(var i = 0; i < ll; i++){
+      var item = items[i];
+      var itemEl;
+      if(item.type === "file" && item.name.match("json")){
+        console.log("DEBUG Graphs::addList Leaf item.name= ",item.name);
+        select.options[select.options.length] = new Option(item.name);
+        //itemEl = createTreeLeaf(path, item.name, item.size);
+      } else {
+        console.log("DEBUG Graphs::addList Branch item.name= ",item.name);
+        //itemEl = createTreeBranch(path, item.name);
+      }
+      //list.appendChild(itemEl);
+    }
+    // pop up the dialog
+    roastFileDialog.showModal();
+    console.log("DEBUG addList confirmBtn value = ", confirmBtn.value);
+  }
+<!-- end of dialog stuff -->
+
+    var heap,temp,digi;
+    var reloadPeriod = 1000;
+    var running = false;
+    var xmlHttp=createXmlHttpObject();
+    var timeoutValue = 5000; // 5 sec
+    var tempPref = 0;
+    var pageNew=0;
+    var dt = new Date();
+    function createXmlHttpObject(){
+        if(window.XMLHttpRequest){
+            xmlHttp=new XMLHttpRequest();
+        }
+        else {
+            xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        return xmlHttp;
+    }
+    
+    function response(){
+        var message;
+        var barwidth;
+        var currentsensor;
+        var xmlResponse;
+        var xmldoc;
+        var dt = new Date();
+        var color = "#e8e8e8";
+        // get Xml stream
+        xmlResponse=xmlHttp.responseXML;
+        // get host date and time
+        document.getElementById("time").innerHTML = dt.toLocaleTimeString();
+        document.getElementById("date").innerHTML = dt.toLocaleDateString();  
+        alert(`response:Loaded got ${xmlHttp.response.length} bytes status: ${xmlHttp.status} ${xmlHttp.response} xml ${xmlHttp.responseXML}`);
+            //xmlResponse=xhttp.responseXML;
+        if ( xmlResponse ) {
+            xmldoc = xmlResponse.getElementsByTagName("CSTEP");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                console.log("processGraph xmldoc length",xmldoc.length);
+                for(i = 0; i < xmldoc.length; i++) {
+                    message = xmldoc[i].firstChild.nodeValue;
+                    console.log("processGraph response message",message);
+                }
+            }
+                      // Temperature Data check temp preference
+            xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                if ( message == 0 ) {// Celsius
+                    tempPref = 0;
+               
+                }
+                else {// Fahrenheit  //
+                    tempPref = 1;
+                
+                } //
+            }
+        }
+  
+        
+    }
+    
+function NumberInputChanged(element,retstr){
+	var xhttp = new XMLHttpRequest;
+	var returnString = retstr+"?VALUE=";
+	var data = document.getElementById(element).value;
+	if(data.length >0 ) //Check for valid response
+	{
+	  if ( element == 'updateRate')
+	  {
+        timeoutValue = data * 100;
+	  } else {
+	
+		xhttp.open("PUT",returnString+data,true);
+		xhttp.send();
+      }
+	}
+}
+
+function parseConfig(arr) {
+    var out="";
+    var i;
+    var y;
+    var x;
+    var seriesLength=chartC.series.length;
+    //if (seriesLength > 0 )
+    //{
+     //   for(var i = seriesLength -1; i > -1; i--) {
+     //      chartC.series[i].remove();
+     //   }
+    //}
+    //if (chartC.series.length) {
+    //  chartC.series[0].remove();
+    //}
+    //chartC.destroy();
+    for(i = 0; i < arr.length; i++) {
+        out += '<a href="' + arr[i].NUM + '">' + arr[i].TMPF + '</a>' + arr[i].TMPC +'<br>'+ arr[i].POS;
+       
+        if (tempPref == 0){
+           x = parseInt(arr[i].POS), y = parseFloat(arr[i].TMPC);
+        }
+        else {
+           x = parseInt(arr[i].POS), y = parseFloat(arr[i].TMPF);
+        }
+       //console.log(this.responseText);
+       //if(chartC.series[0].data.length > 40) {
+        // chartC.series[0].addPoint([x, y], true, true, true);
+       //} else {
+         chartC.series[0].addPoint([x, y], true, false, true);
+       //}
+    }
+}
+
+
+function parseRoastLog(arr,arr1) {
+   // arr is now a jsondoc
+    var out="";
+    var i;
+    var y;
+    var x;
+    var p;
+    var type;
+    var preheat=arr["preheat_steps"];
+    var roast=arr["roast_steps"];
+    var seriesX=chartR.series[0].select();
+    if (chartR.series.length === 2) {
+      chartR.destroy();
+      chartR=newRoastChart();
+    }
+    type=arr["Coffee Type"];
+    if (type ===  undefined)
+    {
+      chartR.setTitle({text: "Roast Data for Coffee Variety: Not Available" });
+    }
+    else
+    {
+      chartR.setTitle({text: "Roast Data for Coffee Variety: " + type});
+    }
+    if (chartR.series.length === 1) {
+      chartR.addSeries({name: 'Servo Position',data:[] , color: '#ff00ff' });
+    }
+    if (preheat[0].PREHEAT_TIME) {
+     for(i = 0; i < preheat.length; i++) {
+        out += '<a href="' + preheat[i].PREHEAT_TIME + '">' + preheat[i].TMPF + '</a>' + preheat[i].TMPC +'<br>'+ preheat[i].POS;
+       // make x position negative so data is arranged in order due to countdown timer.s
+        if (tempPref == 0){
+           x = -parseInt(preheat[i].PREHEAT_TIME), y = parseFloat(preheat[i].TMPC);
+        }
+        else {
+           x = -parseInt(preheat[i].PREHEAT_TIME), y = parseFloat(preheat[i].TMPF);
+        }
+        chartR.series[0].addPoint([x, y], false, false, true);
+        // try to add position series??
+        p = parseInt(preheat[i].POS);
+        chartR.series[1].addPoint([x, p], false, false, true);
+       
+     }
+    }
+    
+    if (roast[0].ROAST_TIME) {
+      var MaxTime=roast[0].ROAST_TIME;  
+      
+      for(i = 0; i < roast.length; i++) {
+        out += '<a href="' + roast[i].ROAST_TIME + '">' + roast[i].TMPF + '</a>' + roast[i].TMPC +'<br>'+ roast[i].POS;
+       // try and make it count up from 0
+        if (tempPref == 0){
+           x = parseInt(MaxTime - roast[i].ROAST_TIME), y = parseFloat(roast[i].TMPC);
+        }
+        else {
+           x = parseInt(MaxTime - roast[i].ROAST_TIME), y = parseFloat(roast[i].TMPF);
+        }
+      
+        chartR.series[0].addPoint([x, y], false, false, false);
+        // try to add position series??
+        p = parseInt(roast[i].POS);
+        chartR.series[1].addPoint([x, p], false, false, true);
+      }
+       
+    }
+    chartR.redraw(); // redraw chart after adding points.
+}
+
+function ButtonPressEvent(sendstr,element){
+	var xhttp = new XMLHttpRequest;
+	var message;
+	var xmlResponse;
+	//var SendString = "sendstr+";
+    var SendString = sendstr;
+    
+	var xmldoc;
+	var jsondoc;
+	if (element != null){
+      var data = document.getElementById(element).value;
+      SendString = sendstr+"?VALUE="+data;
+      console.log("ButtonPressEvent has element ", element, " SendString = ", SendString);
+	}
+	
+	if (sendstr == "TEMP_CONFIG_REQ") {
+	    
+        xhttp.open("PUT",sendstr,true);
+            
+        
+	} 
+    else if (sendstr == "ROAST_LOG_REQ") {
+	    
+        xhttp.open("PUT",SendString,true);
+	}
+	else {
+		xhttp.open("PUT",sendstr,true);
+    }
+    xhttp.send();
+	
+    xhttp.onload = function() {
+    if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+    } else {
+        //alert(`Loaded got ${xhttp.response.length} bytes status: ${xhttp.status} ${xhttp.response} xml ${xhttp.responseXML}`);
+        jsondoc=JSON.parse(xhttp.responseText);
+        if (sendstr == "TEMP_CONFIG_REQ") {
+          parseConfig(jsondoc["steps"]);
+        } 
+        else if (sendstr  == "ROAST_LOG_REQ") {
+          parseRoastLog(jsondoc);
+          //parseRoastLog(jsondoc["preheat_steps","Coffee Type"]);
+          //parseRoastLog(jsondoc["roast_steps"]);
+        }
+    }
+        
+        
+    };
+    
+}
+
+var chartT = new Highcharts.Chart({
+  chart:{ renderTo : 'tempGraph' },
+  title: { text: 'Roast Temperature' },
+  series: [{
+    name: 'Temperature',
+    showInLegend: false,
+    data: []
+  }],
+  plotOptions: {
+    line: { animation: false,
+      dataLabels: { enabled: true }
+    },
+    series: { color: '#059e8a' }
+  },
+  xAxis: { type: 'datetime',
+    dateTimeLabelFormats: { second: '%H:%M:%S' }
+  },
+  yAxis: {
+    title: { text: 'Temperature' }
+  //  if (tempPref == 0) {
+  //      title: { text: 'Temperature (Celsius)' }
+  //  } else {
+  //      title: { text: 'Temperature (Fahrenheit)' }
+  //  }
+  },
+  credits: { enabled: false }
+});
+
+
+var chartC = new Highcharts.Chart({
+  chart:{ renderTo : 'tempConfigGraph' },
+  title: { text: 'Config Temperature' },
+  series: [{
+    name: 'Temperature',
+    showInLegend: false,
+    data: []
+  }],
+  plotOptions: {
+    line: { animation: false,
+      dataLabels: { enabled: true }
+    },
+    series: { color: '#059e8a' }
+  },
+  xAxis: { 
+    title: { text: 'Servo Position ' }
+  },
+  yAxis: {
+    title: { text: 'Temperature (Celsius)' }
+    //title: { text: 'Temperature (Fahrenheit)' }
+  },
+  credits: { enabled: false }
+});
+
+function newRoastChart() {
+  var chartNew = new Highcharts.Chart({
+  chart:{ renderTo : 'roastLogGraph' },
+  title: { text: 'Roast Data' },
+  series: [{
+    name: 'Temperature',
+    showInLegend: false,
+    data: []
+  }],
+  plotOptions: {
+    line: { animation: false,
+      dataLabels: { enabled: true }
+    },
+    series: { color: '#059e8a' }
+  },
+  xAxis: { 
+    title: { text: 'Time (Seconds) ' }
+  },
+  yAxis: {
+    title: { text: 'Temperature (Celsius)' }
+    //title: { text: 'Temperature (Fahrenheit)' }
+  },
+  credits: { enabled: false }
+});
+return chartNew;
+}
+
+var chartR = new Highcharts.Chart({
+  chart:{ renderTo : 'roastLogGraph' },
+  title: { text: 'Roast Data' },
+  series: [{
+    name: 'Temperature',
+    showInLegend: false,
+    data: []
+  }],
+  plotOptions: {
+    line: { animation: false,
+      dataLabels: { enabled: true }
+    },
+    series: { color: '#059e8a' }
+  },
+  xAxis: { 
+    title: { text: 'Time (Seconds) ' }
+  },
+  yAxis: {
+    title: { text: 'Temperature (Celsius)' }
+    //title: { text: 'Temperature (Fahrenheit)' }
+  },
+  credits: { enabled: false }
+});
+
+//setInterval(function ( ) {
+function processGraph()
+{
+  //var xhr=xmlHttp.responseXML;
+    var color = "#e8e8e8";
+    // get Xml stream
+    xmlResponse=xmlHttp.responseXML;
+    // get host date and time
+    document.getElementById("time").innerHTML = dt.toLocaleTimeString();
+    document.getElementById("date").innerHTML = dt.toLocaleDateString();  
+    // Get initial data or page
+    if (pageNew == 0)
+    {
+      console.log("Graphs processGraph pageNew = ", pageNew);
+      ButtonPressEvent('TEMP_CONFIG_REQ',null);
+      pageNew=1;
+    }
+    xmlHttp.onreadystatechange = function() {
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+      if ( xmlResponse ) {
+        // Temperature Data check temp preference
+        xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
+        if(xmldoc.length >0 ) //Check for valid response
+        {
+          message = xmldoc[0].firstChild.nodeValue;
+          if ( message == 0 ) {// Celsius
+            tempPref = 0;
+            xmldoc = xmlResponse.getElementsByTagName("TEMPC");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+              message = xmldoc[0].firstChild.nodeValue;
+            } //
+         }
+         else {// Fahrenheit  //
+           tempPref = 1;
+           xmldoc = xmlResponse.getElementsByTagName("TEMPF");
+           if(xmldoc.length >0 ) //Check for valid response
+           {
+             message = xmldoc[0].firstChild.nodeValue;
+           } //
+         } //
+       }
+       var x = (new Date()).getTime(),
+          y = parseFloat(message);
+       //console.log(this.responseText);
+       if(chartT.series[0].data.length > 40) {
+         chartT.series[0].addPoint([x, y], true, true, true);
+       } else {
+         chartT.series[0].addPoint([x, y], true, false, true);
+       }
+     }
+    }
+  //};
+
+  }
+   xmlHttp.open("GET", "/xml", true);
+   xmlHttp.send();
+//}, timeoutValue ) ;
+	// might haveto play with timeout value
+	setTimeout("processGraph()",timeoutValue);
+}
+</script>
+</html>
