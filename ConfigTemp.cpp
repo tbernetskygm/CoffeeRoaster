@@ -246,7 +246,7 @@ void SendRoastLogData()
   else
     fileName=RoastLogFile;
 
-  Serial.printf("SendRoastLogData -  fileName : %s reqFile %s\n",fileName.c_str(),reqFile.c_str());
+  Serial.printf("SendRoastLogData -  fileName : <%s> reqFile <%s>\n",fileName.c_str(),reqFile.c_str());
 
   if (SPIFFS.exists(fileName)  )
   {
@@ -258,6 +258,7 @@ void SendRoastLogData()
     }
     Server.streamFile(file,"application/json");
   } else {
+    Serial.print("SendRoastLogData - file does not exist file : ");Serial.println(fileName);
     Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
   }
 }

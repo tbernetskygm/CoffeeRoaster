@@ -99,7 +99,7 @@ ConfigStruct tempData[180];
 const char* host="CoffeeRoaster";
 
 int Release = 1;
-int Version = 3;
+int Version = 4;
 int Revision =0;
   
 #ifdef Tempservo

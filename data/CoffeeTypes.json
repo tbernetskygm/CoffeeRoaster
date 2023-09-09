@@ -1,0 +1,20 @@
+{
+    "coffeeTypes": [
+    {
+        "Variety":"Columbian",
+        "Source":"FT Organic Sierra Nevada"
+    },
+    {
+        "Variety":"Ethiopian",
+        "Source":"Hambela Alaka Natural"
+    },
+    {   
+        "Variety":"Costa Rican",
+        "Source":"Hacienda La Minta Estate"
+    },
+    {
+        "Variety":"Guatemalan",
+        "Source":"FT Organic Hue Guaya'b"
+    }
+    ]
+}

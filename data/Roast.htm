@@ -51,13 +51,17 @@
   <button onclick="selectCoffeeFunction()" class="dropbtn">Select Coffee Variety</button>
   <div id="myDropdown" class="dropdown-content">  -->
    <p>Select the Coffee Variety Being Roasted:
-    <select id="coffeeType" onclick="selectCoffeeFunction()">    
-    <option value="0">Colombian </option>
-    <option value="1">Costa Rica </option>
-    <option value="2">Ethiopian</option>
-    <option value="3">Guatamalan </option>
+    <select id="coffeeType" onclick="selectCoffeeFunction()">  
+    // options are filled in from CoffeeTypes.json file
     </select>
     </p>
+    <!--
+    <br>
+    <p>Select test :
+     <select id="coffeeType1" onclick="selectCoffeeFunction()"> 
+     </select>
+    </p>
+    -->
  <!-- </div>
  </div> -->
   <br>
@@ -487,6 +491,7 @@
                     
                 }  
                 // coffeeType
+                GetCoffeeTypes();
                 //document.getElementById("coffeeType").selectedIndex=cCoffeeOpt ;
                 selectCoffeeFunction();
             }
@@ -574,6 +579,40 @@
        returnString = returnString + JSON.stringify(outData);
        xhttp.open("PUT",returnString,true);
        xhttp.send();
+      }
+    }
+ }
+ 
+  
+  function GetCoffeeTypes(){
+    var xhttp = new XMLHttpRequest;
+    var jdoc;
+    var SendString = "ROAST_LOG_REQ";
+    var returnString = "SetRoastSettings?VALUE=";
+    var data = "/CoffeeTypes.json";
+    var ctypes;
+    var elem;
+    // set up to request the file 
+    SendString = SendString+"?VALUE="+data;
+    xhttp.open("PUT",SendString,true);
+    xhttp.send();
+    xhttp.onload = function() {
+      if (xhttp.status != 200 ) {
+        alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
+      } else {
+        jdoc=JSON.parse(xhttp.responseText);
+        ctypes=jdoc["coffeeTypes"];
+        if (ctypes.length > 0)
+        {
+          elem =document.getElementById("coffeeType") ;
+          for (i=0; i < ctypes.length; i++) {
+            var opt = document.createElement('option');
+            opt.value = i;
+            opt.innerHTML = ctypes[i].Variety;
+            elem.appendChild(opt) ;
+            // Put the data in select
+          }
+        } 
       }
     }
  }
