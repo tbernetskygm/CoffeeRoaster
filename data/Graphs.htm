@@ -290,7 +290,8 @@ function parseRoastLog(arr,arr1) {
     if (chartR.series.length === 1) {
       chartR.addSeries({name: 'Servo Position',data:[] , color: '#ff00ff' });
     }
-    if (preheat[0].PREHEAT_TIME) {
+    
+    if (typeof preheat !== 'undefined' ) {
      for(i = 0; i < preheat.length; i++) {
         out += '<a href="' + preheat[i].PREHEAT_TIME + '">' + preheat[i].TMPF + '</a>' + preheat[i].TMPC +'<br>'+ preheat[i].POS;
        // make x position negative so data is arranged in order due to countdown timer.s
@@ -308,7 +309,7 @@ function parseRoastLog(arr,arr1) {
      }
     }
     
-    if (roast[0].ROAST_TIME) {
+    if (typeof roast !== 'undefined') {
       var MaxTime=roast[0].ROAST_TIME;  
       
       for(i = 0; i < roast.length; i++) {
