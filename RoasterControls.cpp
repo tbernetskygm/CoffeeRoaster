@@ -50,9 +50,13 @@ void ProcessButtonRoastStart() {
     if(PreheatTimerStartValue > PreheatTimerValue)
 	    PreheatTimerValue=PreheatTimerStartValue;
 
+    // If there is a preheat timer value then start preheat
     if (PreheatTimerValue > 0 && !PREHEAT_TIMERSTART )
       ProcessPreheatTimerStart();
     else {
+     // No preheat just roast 
+	// set tempSamples to 5
+        tempSamples=5;
       //don't forget to turn heater on!!
       if (HEATERPWR)
 	ProcessButtonHeaterPwr();
@@ -77,7 +81,8 @@ void ProcessButtonRoastStart() {
       servoPosNew=0;
     }
     // If stop is pressed update log set last and stop to true.
-    UpdateRoastingLog(false,true,true);
+    UpdateRoastingLog(true,false,true,true);
+    Serial.printf("Stop after update roasting log\n");
     // call ProcessButtonTimerStart() to stop the timer
     if (TIMERSTART)
     {
@@ -380,6 +385,7 @@ void SetupRoastingLog()
   appendFile(SPIFFS,fileName.c_str(), cdata_p);
   sprintf(buff, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
   appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
   sprintf(buff, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
   appendFile(SPIFFS,fileName.c_str(), cdata_p);
   sprintf(buff, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
@@ -457,47 +463,58 @@ void readConfigData()
   }
 }
 
-
-void UpdateRoastingLog(bool first , bool last, bool stop)
+// Preheat
+// Call with roast = false first=true for first pass 
+void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
 {
+	// I changed this so I could do roast without preheating
+	// but it broke the logging stuff Didn't put in the 
+	// "preheat_steps":[  or "roast_steps":[ t
   String fileName;
   char buff[64]= {'\0'};
   char * cdata_p=&buff[0];
   static bool endPreheat=false;
   fileName=RoastLogFile;
   
-  Serial.printf("---UpdateRoastingLog file first %d endPreheat %d last %d stop %d\n",first,endPreheat,last,stop);
+  Serial.printf("---UpdateRoastingLog file roast %d first %d endPreheat %d last %d stop %d\n",roast,first,endPreheat,last,stop);
 
-  if (first)
+  // If not roast and first is true then set end preheat to false so preheat entries get added
+  if (!roast && first)
     endPreheat=false;
    
   if (PREHEAT)
   {
+	  Serial.printf("Preheat steps\n");
     // This starts the preheat_steps array
-    if(first){
+    if(!roast && first){
+	  Serial.printf("** First Preheat step ***\n");
       sprintf(buff, "\t\"preheat_steps\": [\n");
       appendFile(SPIFFS,fileName.c_str(), cdata_p);
     }
     sprintf(buff, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
-  } else if (ROAST) {
-    // This closes the preheat_steps array ad starts the roast_steps array	  
-    if (!endPreheat && !first ){
-      sprintf(buff, "\n\t],\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  } 
+  else if (ROAST) 
+  {
+    // This closes the preheat_steps array and starts the roast_steps array	  
+    if (roast && !endPreheat && first ){
+	  Serial.printf("** First Roast step ***\n");
+      //sprintf(buff, "\n\t],\n");
+      //appendFile(SPIFFS,fileName.c_str(), cdata_p);
       sprintf(buff, "\n\t\"roast_steps\": [\n");
       appendFile(SPIFFS,fileName.c_str(), cdata_p);
       endPreheat=true;
     }
-    else if (!endPreheat && first ){
-      sprintf(buff, "\t\"preheat_steps\": [\n\t{\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      sprintf(buff, "}\n\t],\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      sprintf(buff, "\n\t\"roast_steps\": [\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      endPreheat=true;
-    }
+   // else if (!endPreheat && first ){
+//	  Serial.printf("** >>>> First Preheat step ***\n");
+//      sprintf(buff, "\t\"preheat_steps\": [\n\t{\n");
+//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+//      sprintf(buff, "}\n\t],\n");
+//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+//      sprintf(buff, "\n\t\"roast_steps\": [\n");
+//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+//      endPreheat=true;
+//    }
      sprintf(buff, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
   }
@@ -522,6 +539,13 @@ void UpdateRoastingLog(bool first , bool last, bool stop)
       //sprintf(buff, ", first %d last %d\n", first , last);
       sprintf(buff, ",\n");
       appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    }
+    else if (!roast && last)
+    {
+      Serial.printf("UpdateRoastingLog last preheat step roast %d endPreheat %d last %d\n",roast,endPreheat,last);
+      sprintf(buff, "\n\t],\n");
+      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+
     } else {
       Serial.printf("UpdateRoastingLog adding newline only file first %d endPreheat %d last %d\n",first,endPreheat,last);
       //sprintf(buff, " first %d last %d\n", first,last);

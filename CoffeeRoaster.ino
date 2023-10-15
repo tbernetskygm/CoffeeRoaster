@@ -517,7 +517,7 @@ void loop() {
       Serial.printf("roastTimerSemaphore STOPPING time : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
       tempSamples=10;
       ClearRoastTimer();
-      UpdateRoastingLog(first,true); // set last to true so comma doesn't get added
+      UpdateRoastingLog(ROAST,first,true); // set last to true so comma doesn't get added
       if (ROAST)
       {
 	// turn off the mixer if it is on 
@@ -532,6 +532,8 @@ void loop() {
 	CloseRoastingLog();
     Serial.printf("roastTimerSemaphore 1 reset first : %d \n",first);
 	first=true;
+	// set tempSamples back to 10
+        tempSamples=10;
       }
       servoPosNew=0;
     }
@@ -539,7 +541,8 @@ void loop() {
       if (TimerValue%tempSamples==0 && ROAST) // dont do update if roast was stopped
       {
 	Serial.printf("roastTimerSemaphore UpdateRoastingLog time  : %d ROAST: %d\n",TimerValue,ROAST);
-	UpdateRoastingLog(first);
+	first=true;
+	UpdateRoastingLog(ROAST,first);
 	if (first)
 	  first=!first;
       }
@@ -572,7 +575,7 @@ void loop() {
     if (PREHEAT_TIMERSTART && (PreheatTimerValue%tempSamples == 0) && (PreheatTimerValue > 0) )
     {
       Serial.printf("utilTimerSemaphore UpdateRoastingLog time  : %d ServoPos : %d PreheatServoPos %d\n",PreheatTimerValue,servoPos,PreheatServoPos);
-      UpdateRoastingLog(first); // 
+      UpdateRoastingLog(false,first); // 
       if (first)
 	first=!first;
       //Serial.print("Calling adjustTemp x= ");
@@ -581,10 +584,11 @@ void loop() {
     }
     else if (PREHEAT_TIMERSTART && PreheatTimerValue == 0)
     {
+      Serial.printf("In Loop utilTimerSemaphore is true End of Preheat Time!!!!\n");
       Serial.printf("In Loop utilTimerSemaphore is true PreheatTimer is %d\n",PreheatTimerValue);
       Serial.printf("In Loop utilTimerSemaphore Roast %d TIMERSTART %d \n",ROAST, TIMERSTART );
       if (!first)
-	UpdateRoastingLog(first,true); // set last to true so comma doesn't get added
+	UpdateRoastingLog(false,first,true); // set last to true so comma doesn't get added
       ClearUtilTimer();
       PREHEAT_TIMERSTART=false;
       PREHEAT=false;
