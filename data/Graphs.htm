@@ -137,6 +137,7 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
         if (item.name.match("RoastLog")){ 
           console.log("DEBUG Graphs::addList Leaf item.name= ",item.name);
           select.options[select.options.length] = new Option(item.name);
+          
         }
         //itemEl = createTreeLeaf(path, item.name, item.size);
       } else {
@@ -147,6 +148,10 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
     }
     // pop up the dialog
     roastFileDialog.showModal();
+    // Make it Choose the first file 
+    if (select.options.length > 0) {
+      confirmBtn.value = select.options[0].value;
+    }
     console.log("DEBUG addList confirmBtn value = ", confirmBtn.value);
   }
 <!-- end of dialog stuff -->
