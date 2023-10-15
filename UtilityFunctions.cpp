@@ -275,7 +275,11 @@ void parseJsonFile(String filename)
     }
     Serial.println("First deserializeJson() worked!!");
     file.close();
-    const char* Configuration_Date = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
+    const char * ConfigurationDate = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
+    // Set Global Variable
+  Serial.printf("UtilityFunctions::parseJsonFile ConfigurationDate = %s\n",ConfigurationDate);
+    Configuration_Date = ConfigurationDate;
+  Serial.printf("UtilityFunctions::parseJsonFile Configuration_Date = %s\n",Configuration_Date.c_str());
 
 for (JsonObject step : jdoc["steps"].as<JsonArray>()) {
 

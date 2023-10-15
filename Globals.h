@@ -112,6 +112,7 @@ extern int ConfigMaxSteps;
 extern int ConfigMaxStepsNew ;
 extern String ConfigFile;
 extern String ConfigHighFile;
+extern String Configuration_Date;
 extern String RoastLogFile;
 extern String RoastLogHighFile;
 

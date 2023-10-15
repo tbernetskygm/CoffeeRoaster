@@ -410,6 +410,9 @@ void SetupRoastingLog()
   appendFile(SPIFFS,fileName.c_str(), cdata_p);
   sprintf(buff, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
   appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
+  sprintf(buff, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
+  appendFile(SPIFFS,fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
   if (HEATGUNHIGH == 1)
     sprintf(buff, "\t\"Heatgun Speed\": \"High\",\n");

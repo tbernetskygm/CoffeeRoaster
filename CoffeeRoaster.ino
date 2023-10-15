@@ -101,7 +101,7 @@ const char* host="CoffeeRoaster";
 
 int Release = 1;
 int Version = 5;
-int Revision =0;
+int Revision =1;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
@@ -176,6 +176,7 @@ int ConfigMaxSteps = 1;
 int ConfigMaxStepsNew = 0;
 String ConfigFile="/TempConfig.json";
 String ConfigHighFile="/TempConfigHigh.json";
+String Configuration_Date;
 String RoastLogFile="/RoastLog.json";
 String RoastLogHighFile="/RoastLogHigh.json";
 
