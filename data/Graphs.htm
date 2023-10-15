@@ -134,8 +134,10 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
       var item = items[i];
       var itemEl;
       if(item.type === "file" && item.name.match("json")){
-        console.log("DEBUG Graphs::addList Leaf item.name= ",item.name);
-        select.options[select.options.length] = new Option(item.name);
+        if (item.name.match("RoastLog")){ 
+          console.log("DEBUG Graphs::addList Leaf item.name= ",item.name);
+          select.options[select.options.length] = new Option(item.name);
+        }
         //itemEl = createTreeLeaf(path, item.name, item.size);
       } else {
         console.log("DEBUG Graphs::addList Branch item.name= ",item.name);
