@@ -1,4 +1,4 @@
-                                                        <!DOCTYPE html lang="en" class="js-focus-visible">
+                                                            <!DOCTYPE html lang="en" class="js-focus-visible">
  <html>
   </head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -725,7 +725,13 @@ function process(){
 function selectCoffeeFunction() {
   var e= document.getElementById("coffeeType");
   var value=e.value;
-  var data = e.options[e.selectedIndex].text;
+  var data
+  if (e.selectedIndex > 0 )
+  {
+    data = e.options[e.selectedIndex].text;
+  } else {
+    data = "Columbian";
+  }
   var xhttp = new XMLHttpRequest;
   var returnString = "COFFEE_TYPE?VALUE="+value+"&TEXT="+data;
   
