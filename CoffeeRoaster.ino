@@ -541,7 +541,7 @@ void loop() {
       if (TimerValue%tempSamples==0 && ROAST) // dont do update if roast was stopped
       {
 	Serial.printf("roastTimerSemaphore UpdateRoastingLog time  : %d ROAST: %d\n",TimerValue,ROAST);
-	first=true;
+	//first=true;
 	UpdateRoastingLog(ROAST,first);
 	if (first)
 	  first=!first;

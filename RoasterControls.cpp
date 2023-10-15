@@ -259,6 +259,7 @@ void ProcessButtonTimerStart() {
       FinishServoPos=160;
     tempTotalF=0;
     tempTotalC=0;
+    first=true;
     Serial.printf("Button Timer Start Roast TimerValue %d \n",TimerValue);
     timerStart(RoastTimer);
   }
@@ -269,6 +270,7 @@ void ProcessButtonTimerStart() {
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     TimerValue = TimerStartValue;
     ClearRoastTimer();
+    first=true;
     Serial.printf("Button Timer  Stop timer %d\n",TIMERSTART);
   }
   
@@ -479,8 +481,8 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
   Serial.printf("---UpdateRoastingLog file roast %d first %d endPreheat %d last %d stop %d\n",roast,first,endPreheat,last,stop);
 
   // If not roast and first is true then set end preheat to false so preheat entries get added
-  if (!roast && first)
-    endPreheat=false;
+ // if (!roast && first)
+ //   endPreheat=false;
    
   if (PREHEAT)
   {
@@ -497,13 +499,14 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
   else if (ROAST) 
   {
     // This closes the preheat_steps array and starts the roast_steps array	  
-    if (roast && !endPreheat && first ){
+    //if (roast && !endPreheat && first ){
+    if (roast && first ){
 	  Serial.printf("** First Roast step ***\n");
       //sprintf(buff, "\n\t],\n");
       //appendFile(SPIFFS,fileName.c_str(), cdata_p);
       sprintf(buff, "\n\t\"roast_steps\": [\n");
       appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      endPreheat=true;
+      //endPreheat=true;
     }
    // else if (!endPreheat && first ){
 //	  Serial.printf("** >>>> First Preheat step ***\n");

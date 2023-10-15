@@ -141,6 +141,7 @@ extern char XML[2048];
 //extern char tempXML[];
 // just some buffer holder for char operations
 extern char buf[64];
+extern bool first;
 void readThermocoupleTemps();
 
 #endif
