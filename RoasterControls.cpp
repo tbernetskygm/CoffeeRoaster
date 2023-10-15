@@ -55,6 +55,8 @@ void ProcessButtonRoastStart() {
       ProcessPreheatTimerStart();
     else {
      // No preheat just roast 
+      // Position servo to proper temp
+      servoPosNew=FinishServoPos;
 	// set tempSamples to 5
         tempSamples=5;
       //don't forget to turn heater on!!
