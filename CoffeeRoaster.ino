@@ -18,6 +18,7 @@
 #define GRAPH_PAGE
 #define Tempservo
 #define THERMOCOUPLE
+#define OTA_T
 
 //#define WEBSERIAL
 #if defined(ARDUINO_ARCH_ESP8266)
@@ -99,8 +100,8 @@ ConfigStruct tempData[180];
 const char* host="CoffeeRoaster";
 
 int Release = 1;
-int Version = 4;
-int Revision =1;
+int Version = 5;
+int Revision =0;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
@@ -283,12 +284,41 @@ void rcvWebMsg(uint8_t *data, size_t len)
 }
 #endif
 
+#ifdef OTA_T
+// Functions to handle OTA stuff
+void exitOTAStart() {
+  Serial.println("OTA started");
+}
+
+void exitOTAProgress(unsigned int amount, unsigned int sz) {
+  Serial.printf("OTA in progress: received %d bytes, total %d bytes\n", sz, amount);
+}
+
+void exitOTAEnd() {
+  Serial.println("OTA ended");
+}
+
+void exitOTAError(uint8_t err) {
+  Serial.printf("OTA error occurred %d\n", err);
+}
+#endif
+
+
 #define FORMAT_SPIFFS_IF_FAILED true
 void setup() {
 
   Config.apid = "CoffeeRoaster";
   Config.autoReconnect = true;
+#ifdef OTA_T
+  Config.ota = AC_OTA_BUILTIN;
+#endif
+#ifdef OTA_T
   Portal.config(Config);
+  Portal.onOTAStart(exitOTAStart);
+  Portal.onOTAEnd(exitOTAEnd);
+  Portal.onOTAProgress(exitOTAProgress);
+  Portal.onOTAError(exitOTAError);
+#endif
   //RoastPreferences.begin("CoffeeRoaster",false);
   delay(1000);
   Serial.begin(115200);
