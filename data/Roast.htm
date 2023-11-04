@@ -397,12 +397,19 @@
   
   // Roast Timer Value Data
   // Timer Settings Data
+  // Don't update if item in focus
+          var tElement;
           xmldoc = xmlResponse.getElementsByTagName("TMIN0");
           if(xmldoc.length >0 ) //Check for valid response
           {
-            message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("min0").value = message;
+            message = xmldoc[0].firstChild.nodeValue;
+            tElement = document.getElementById("min0");
+            if (document.activeElement != tElement)
+            {
+              document.getElementById("min0").value = message;
+            }
           }
-          
+
             xmldoc = xmlResponse.getElementsByTagName("TIMEREM0");
             message = xmldoc[0].firstChild.nodeValue;
             document.getElementById("timertxt").value = message;
@@ -631,12 +638,18 @@
             {
                 if ( (element == "ptemp0") || ( element == "ftemp0") )
                 {
+                // don't update from xml if you are entering data
+                  if (document.activeElement != element)
+                  {
                     tempVal=CelsiusToF(this.responseText)
                     document.getElementById(element).value=tempVal;
+                  }
                 }
-            
             }else {
-                document.getElementById(element).value=this.responseText;
+              if (document.activeElement != element)
+              {
+                  document.getElementById(element).value=this.responseText;
+              }
             }
                 
 		}
