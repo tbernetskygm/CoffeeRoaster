@@ -450,13 +450,15 @@
                 xmldoc = xmlResponse.getElementsByTagName("VERSION");
                 if(xmldoc.length >0 ) //Check for valid response
                 {
-                  message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("sw_version").innerHTML = message;
+                  message = xmldoc[0].firstChild.nodeValue;
+                  document.getElementById("sw_version").innerHTML = message;
                 }
                 // Timer Settings Data
                 xmldoc = xmlResponse.getElementsByTagName("TMIN0");
                 if(xmldoc.length >0 ) //Check for valid response
                 {
-                  message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("min0").value = message;
+                  message = xmldoc[0].firstChild.nodeValue;
+                  document.getElementById("min0").value = message;
                 }
 
                 
