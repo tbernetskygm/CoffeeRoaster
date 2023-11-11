@@ -278,6 +278,7 @@ function parseRoastLog(arr,arr1) {
     var x;
     var p;
     var type;
+    var addTime = arr["Roasting time adjusted during roast by (min)"];
     var preheat=arr["preheat_steps"];
     var roast=arr["roast_steps"];
     var seriesX=chartR.series[0].select();
@@ -317,16 +318,31 @@ function parseRoastLog(arr,arr1) {
     }
     
     if (typeof roast !== 'undefined') {
-      var MaxTime=roast[0].ROAST_TIME;  
-      
+      var MaxTime
+      if (typeof addTime !== 'undefined') {
+      // First roast step is at 5 seconds so have to add it to get true Max Time
+        MaxTime=roast[0].ROAST_TIME + 5 + (addTime*60);
+        }
+        else {
+        MaxTime=roast[0].ROAST_TIME + 5;
+        }
+      var rTime;
       for(i = 0; i < roast.length; i++) {
         out += '<a href="' + roast[i].ROAST_TIME + '">' + roast[i].TMPF + '</a>' + roast[i].TMPC +'<br>'+ roast[i].POS;
        // try and make it count up from 0
+       if (typeof addTime !== 'undefined') {
+          // Have to recalulate based on number of steps
+          rTime = MaxTime - (MaxTime - (5 * (i+1)));
+       } else
+       {
+          rTime = MaxTime - roast[i].ROAST_TIME;
+       }
+
         if (tempPref == 0){
-           x = parseInt(MaxTime - roast[i].ROAST_TIME), y = parseFloat(roast[i].TMPC);
+           x = parseInt(rTime), y = parseFloat(roast[i].TMPC);
         }
         else {
-           x = parseInt(MaxTime - roast[i].ROAST_TIME), y = parseFloat(roast[i].TMPF);
+           x = parseInt(rTime), y = parseFloat(roast[i].TMPF);
         }
       
         chartR.series[0].addPoint([x, y], false, false, false);
@@ -395,7 +411,7 @@ var chartT = new Highcharts.Chart({
   title: { text: 'Roast Temperature' },
   series: [{
     name: 'Temperature',
-    showInLegend: false,
+    showInLegend: true,
     data: []
   }],
   plotOptions: {
@@ -424,7 +440,7 @@ var chartC = new Highcharts.Chart({
   title: { text: 'Config Temperature' },
   series: [{
     name: 'Temperature',
-    showInLegend: false,
+    showInLegend: true,
     data: []
   }],
   plotOptions: {
@@ -449,7 +465,7 @@ function newRoastChart() {
   title: { text: 'Roast Data' },
   series: [{
     name: 'Temperature',
-    showInLegend: false,
+    showInLegend: true,
     data: []
   }],
   plotOptions: {
@@ -475,7 +491,7 @@ var chartR = new Highcharts.Chart({
   title: { text: 'Roast Data' },
   series: [{
     name: 'Temperature',
-    showInLegend: false,
+    showInLegend: true  ,
     data: []
   }],
   plotOptions: {
