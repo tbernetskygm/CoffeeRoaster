@@ -101,7 +101,7 @@ const char* host="CoffeeRoaster";
 
 int Release = 1;
 int Version = 5;
-int Revision =1;
+int Revision =2;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
@@ -141,6 +141,7 @@ bool HEATERPWR = true; // control heat gun power SSR logic reversed
 bool TempPref = false; // False is C True is F
 bool RESET_TIMER = false;
 bool TEMP_CONFIG = false;
+bool TimerAdjust = false; // Set true if you adjust roast timer during roast
 uint32_t SensorUpdate = 0;
 int TempSensorKOhms = 10;
 int FanRPM = 0;
@@ -649,7 +650,6 @@ void loop() {
       }
       
     }
-
   }
   readThermocoupleTemps();
   //Serial.print("C = "); 

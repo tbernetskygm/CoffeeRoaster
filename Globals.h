@@ -75,6 +75,7 @@ extern bool HEATERPWR; // control heat gun power SSR logic reversed
 extern bool TempPref ; // False is C True is F
 extern bool RESET_TIMER;
 extern bool TEMP_CONFIG;
+extern bool TimerAdjust;
 extern uint32_t SensorUpdate;
 extern int TempSensorKOhms;
 extern int FanRPM;

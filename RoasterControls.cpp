@@ -72,7 +72,7 @@ void ProcessButtonRoastStart() {
 
   else //Stop
   {
-    // call ProcessButtonMixPwr() to stop mixer
+    // call ProcessButtonMixPwr() to stop mixer 
     if (MIXPWR)
       ProcessButtonMixPwr();
     // call ProcessButtonHeaterPwr() to turn off heater
@@ -91,6 +91,9 @@ void ProcessButtonRoastStart() {
       ProcessButtonTimerStart();
     }
     CloseRoastingLog(true);
+    // reset variables
+    TimerAdjust=false;
+    TimerMin0New =0;
   }
 }
 
@@ -283,6 +286,7 @@ void ProcessButtonTimerStart() {
 void ProcessButtonTimerAdd() {
   TimerValue = TimerValue + 60;
   TimerMin0New +=1;
+  TimerAdjust = true;
   Server.send(200, "text/plain", ""); //Send web page
 }
 
@@ -292,6 +296,7 @@ void ProcessButtonTimerSub() {
   TimerMin0New -=1;
   if (TimerValue < 0)
 	  TimerValue=0;
+  TimerAdjust = true;
   Server.send(200, "text/plain", ""); //Send web page
 }
 
@@ -437,14 +442,30 @@ void CloseRoastingLog(bool manualStop)
     // Stopped manually for some reason
     sprintf(buff,"\t],\n"); // close roast_steps array
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    sprintf(buff, "\t\"Roasting was stopped manually at\": \"%s\"\n}\n",get_date_string().c_str());
+    sprintf(buff, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
+    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    if (TimerAdjust)
+    {
+      sprintf(buff, ",\n\t\"Roasting time adjusted during roast by (min)\": %d\n",TimerMin0New);
+      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    }
+    // close the json string
+    sprintf(buff,"\n}\n");
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
   }
   else
   {
     // stopped because roasting was finished
     // this closes roast_steps array "]" and then the json with "}"
-    sprintf(buff,"\n\t]\n}\n");
+    sprintf(buff,"\n\t]");
+    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    if (TimerAdjust)
+    {
+      sprintf(buff, ",\n\t\"Roasting time was adjusted during roast by (min)\": %d\n",TimerMin0New);
+      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    }
+    // close the json string
+    sprintf(buff,"}\n");
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
   }
 
