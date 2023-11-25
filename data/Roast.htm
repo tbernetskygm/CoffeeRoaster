@@ -163,7 +163,7 @@
   const outputBox = document.querySelector('output');
   const selectEl = roastFileDialog.querySelector('select');
   //const confirmBtn = roastFileDialog.querySelector('#confirmBtn');
-  
+  var Roasting =0;
   var path = document.createElement("input");
   // "Update details" button opens the <dialog> modally
   showLogDialog.addEventListener('click', () => {
@@ -354,12 +354,14 @@
                     document.getElementById("btnStart").setAttribute("class" , "offButton");
                     document.getElementById("min0").disabled = false;
                     document.getElementById("sec0").disabled = false;
+                    Roasting = 0;
                 }
                 else { // 
                     document.getElementById("btnStart").innerHTML = "Stop Roasting";
                     document.getElementById("btnStart").setAttribute("class" , "onButton");
                     document.getElementById("min0").disabled = true;
                     document.getElementById("sec0").disabled = true;
+                    Roasting = 1;
                 }
             }
 
@@ -700,6 +702,15 @@ function UpdateTempSlider(value){
 	var SendString = "sendstr+";
 	if (sendstr == "TEMP_CONFIG_REQ") {
         xhttp.open("GET",sendstr,true);
+	} else if (sendstr == "BUTTON_ROAST_START") {
+	   xhttp.open("PUT",sendstr,true);
+	   if (Roasting == 1) {
+	      // Confirm you want to stop Yes should send button
+	      // No should skip
+	      if (!confirm("Do you really want to stop roasting?")) {
+            return;
+          }
+	   }
 	} else {
 		xhttp.open("PUT",sendstr,true);
     }
