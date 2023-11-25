@@ -15,6 +15,40 @@
     {
         "Variety":"Guatemalan",
         "Source":"FT Organic Hue Guaya'b"
+    },
+    {
+         "Variety":"Guatemalan Huehue",
+        "Source":"Finca Vista Hermosa Reserve",
+        "Roasting Notes": "Light to Dark",
+        "Tasting Notes": "Chocolate Nutty, Malty"
+    },
+    {
+        "Variety":"Indonesian Sumatra",
+        "Source":"Mandhelinig Garamnido Gayo",
+        "Vendor": "Burman Coffee Traders",
+        "Roasting Notes": "Medium to Dark",
+        "Tasting Notes": "Clean, Chocolate, Spice, Smokey"
+    },
+    {
+         "Variety":"India Mysore Nuggets Extra Bold",
+        "Source":"",
+        "Vendor": "Burman Coffee Traders",
+        "Roasting Notes": "Medium to Dark",
+        "Tasting Notes": "Nutty, Spice, Smoky"
+    },
+    {
+         "Variety":"Tanzania BCT Select Peaberry",
+        "Source":"",
+        "Vendor": "Burman Coffee Traders",
+        "Roasting Notes": "Medium to Dark",
+        "Tasting Notes": "Chocolate, Spice, Roasty"
+    },
+    {
+         "Variety":"Uganda Mbale Mountain Harvest Org.",
+        "Source":"Makali Washed",
+        "Vendor": "Burman Coffee Traders",
+        "Roasting Notes": "Medium to Dark",
+        "Tasting Notes": "Sweet, Malty"
     }
     ]
 }
