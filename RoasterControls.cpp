@@ -185,8 +185,8 @@ void ProcessBeanQuantityButton() {
 void ProcessCoffeeType() {
   String t_state = Server.arg("VALUE");
   CoffeeOpt = t_state.toInt();
-  t_state = Server.arg("TEXT");
-  CoffeeType=t_state;
+  String t_text = Server.arg("TEXT");
+  CoffeeType=t_text;
   Serial.print("ProcessCoffeeType CoffeeOpt "); Serial.println(CoffeeOpt);
 
   Serial.print("ProcessCoffeeType CoffeeType "); Serial.println(CoffeeType);
@@ -198,8 +198,8 @@ void ProcessCoffeeType() {
 void ProcessRoastSettingsButton() {
   String t_state = Server.arg("VALUE");
   Serial.print("ProcessRoastSettingsButton using RoastLogData: "); Serial.println(t_state);
-  sprintf(buf, "{ Using data }");
-  Server.send(200, "text/plain", buf); //Send web page
+  sprintf(buf, "{ \"Using data From Log\": 0 }");
+  Server.send(200, "application/json", buf); //Send web page
   parseRoastData(t_state);
 }
 
