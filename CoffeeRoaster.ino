@@ -101,7 +101,7 @@ const char* host="CoffeeRoaster";
 
 int Release = 1;
 int Version = 5;
-int Revision =2;
+int Revision =3;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
