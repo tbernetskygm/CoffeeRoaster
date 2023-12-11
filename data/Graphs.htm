@@ -390,7 +390,12 @@ function ButtonPressEvent(sendstr,element){
         alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
     } else {
         //alert(`Loaded got ${xhttp.response.length} bytes status: ${xhttp.status} ${xhttp.response} xml ${xhttp.responseXML}`);
+       if ( ! tryParseJSONObject(xhttp.responseText)) {
+         alert ( `Error : Selected Roast Log is invalid! ${filename}`);
+         return;
+       }
         jsondoc=JSON.parse(xhttp.responseText);
+
         if (sendstr == "TEMP_CONFIG_REQ") {
           parseConfig(jsondoc["steps"]);
         } 
@@ -405,7 +410,18 @@ function ButtonPressEvent(sendstr,element){
     };
     
 }
-
+ function tryParseJSONObject (text){
+        if (typeof text!=="string"){
+        return false;
+    }
+    try{
+        var json = JSON.parse(text);
+        return (typeof json === 'object');
+    }
+    catch (error){
+        return false;
+    }
+};
 var chartT = new Highcharts.Chart({
   chart:{ renderTo : 'tempGraph' },
   title: { text: 'Roast Temperature' },
