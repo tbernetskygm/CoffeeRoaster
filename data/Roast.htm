@@ -69,6 +69,8 @@
   <br>
   <input type="range" class="controlslider" id="tempcontrol" min="0" max="180" value = "0" width = "0%" oninput="UpdateTempSlider(this.value)"/>
   <br>
+  <button type="button" class = "btn" id = "overrideTemp" onclick="ButtonPressEvent('OVERRIDE_TEMP_CONTROL')">Override Temp Setting</button>
+  <br>
   <div class="bodytext">Temperature Sensor</div>
   <br>
   <label for="tempread" >Temperature Reading:</label>
@@ -235,6 +237,7 @@
   var tempVal=0;
   var pageNew=0;
   var tempSliderPos=0;
+  var tempOverride=0;
     function createXmlHttpObject(){
         if(window.XMLHttpRequest){
             xmlHttp=new XMLHttpRequest();
@@ -354,6 +357,10 @@
                     document.getElementById("btnStart").setAttribute("class" , "offButton");
                     document.getElementById("min0").disabled = false;
                     document.getElementById("sec0").disabled = false;
+                    document.getElementById("tempcontrol").disabled = false;
+
+                     document.getElementById("overrideTemp").disabled = true;
+
                     Roasting = 0;
                 }
                 else { // 
@@ -361,6 +368,10 @@
                     document.getElementById("btnStart").setAttribute("class" , "onButton");
                     document.getElementById("min0").disabled = true;
                     document.getElementById("sec0").disabled = true;
+                    if ( tempOverride === 0 ) {
+                      document.getElementById("tempcontrol").disabled = true;
+                    }
+                    document.getElementById("overrideTemp").disabled = false;
                     Roasting = 1;
                 }
             }
@@ -501,10 +512,36 @@
                    document.getElementById("bean_qty").value = message;
                     
                 }  
-                // coffeeType
-                GetCoffeeTypes();
+
+                xmldoc = xmlResponse.getElementsByTagName("FINISH_TEMP");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("ftemp0").value = message;
+
+                }
+
+
+                xmldoc = xmlResponse.getElementsByTagName("PREHEAT_TEMP");
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   document.getElementById("ptemp0").value = message;
+
+                }
+
                 //document.getElementById("coffeeType").selectedIndex=cCoffeeOpt ;
-                selectCoffeeFunction();
+                xmldoc = xmlResponse.getElementsByTagName("Coffee_Type");
+                var coffeeNum;
+                if(xmldoc.length >0 ) //Check for valid response
+                {
+                   message = xmldoc[0].firstChild.nodeValue;
+                   coffeeNum = message;
+                   //document.getElementById("coffeeType").value = message;
+                  // coffeeType
+                   GetCoffeeTypes(coffeeNum);
+                }
+                //selectCoffeeFunction(coffeeNum);
             }
  
         }//End of check for xmlResponse
@@ -528,8 +565,19 @@
       if (xhttp.status != 200 ) {
         alert(`Error : ${xhttp.status} ${xhttp.statusText}`);
       } else {
-       jdoc=JSON.parse(xhttp.responseText);
+       if ( ! tryParseJSONObject(xhttp.responseText)) {
+         alert ( `Error : Selected Roast Log is invalid! ${filename}`);
+         return;
+       }
+       jdoc=JSON.parse(xhttp.responseText)
+       if ( jdoc["Using data From Log"] == 0){
+         return;
+         }
        const Roast_Date = jdoc["Roasting Log Date"]; // "1970/01/01(Thr)00:02:01"
+       if (typeof Roast_Date === 'undefined' ) {
+         alert ( `Error : Selected Roast Log is invalid! ${filename}`);
+         return;
+       }
        console.log('Roast Roast_Date = ',Roast_Date);
        const cBeanQty = jdoc["Bean Quantity (ounces)"]; // "12"
        const cCoffeeType = jdoc["Coffee Type"]; // "Columbian"
@@ -560,7 +608,7 @@
        NumberInputChanged('bean_qty','BEAN_QTY_BUTTON');
        // coffeeType
        document.getElementById("coffeeType").selectedIndex=cCoffeeOpt ;
-        selectCoffeeFunction();
+        selectCoffeeFunction(cCoffeeOpt);
        //const cselect  document.querySelector('#coffeeType');
        //cselect.selectedIndex='cCoffeeOpt
        
@@ -593,9 +641,21 @@
       }
     }
  }
- 
+
+ function tryParseJSONObject (text){
+        if (typeof text!=="string"){
+        return false;
+    }
+    try{
+        var json = JSON.parse(text);
+        return (typeof json === 'object');
+    }
+    catch (error){
+        return false;
+    }
+};
   
-  function GetCoffeeTypes(){
+  function GetCoffeeTypes(CoffeeOpt){
     var xhttp = new XMLHttpRequest;
     var jdoc;
     var SendString = "ROAST_LOG_REQ";
@@ -624,6 +684,7 @@
             // Put the data in select
           }
         } 
+        selectCoffeeFunction(CoffeeOpt);
       }
     }
  }
@@ -711,6 +772,14 @@ function UpdateTempSlider(value){
             return;
           }
 	   }
+    } else if (sendstr == "OVERRIDE_TEMP_CONTROL") {
+      document.getElementById("tempcontrol").disabled = false;
+      if (tempOverride === 0) {
+        tempOverride = 1;
+      } else {
+        tempOverride = 0;
+      }
+      return;
 	} else {
 		xhttp.open("PUT",sendstr,true);
     }
@@ -748,16 +817,26 @@ function process(){
   }// End of process()
 
 
-function selectCoffeeFunction() {
+function selectCoffeeFunction(num) {
   var e= document.getElementById("coffeeType");
   var value=e.value;
   var data
-  if (e.selectedIndex > 0 )
-  {
+  //if (e.selectedIndex > 0 )
+  //{
+    if (typeof num !== 'undefined' ) {
+      if (e.length >= num)
+      {
+        e.selectedIndex = num;
+        value = num;
+      }
+    }
     data = e.options[e.selectedIndex].text;
-  } else {
-    data = "Columbian";
-  }
+
+  //} else {
+  //  // This is default
+  //  data = "Columbian";
+  //  //data = e.options[e.num].text;
+  //}
   var xhttp = new XMLHttpRequest;
   var returnString = "COFFEE_TYPE?VALUE="+value+"&TEXT="+data;
   
