@@ -81,7 +81,7 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
   const outputBox = document.querySelector('output');
   const selectEl = roastFileDialog.querySelector('select');
   //const confirmBtn = roastFileDialog.querySelector('#confirmBtn');
-  
+  var filename;
   var path = document.createElement("input");
   // "Update details" button opens the <dialog> modally
   showLogDialog.addEventListener('click', () => {
@@ -93,6 +93,7 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
   // "Favorite animal" input sets the value of the submit button
   selectEl.addEventListener('change', (e) => {
     confirmBtn.value = selectEl.value;
+    filename=confirmBtn.value;
     console.log("DEBUG showLogDialog::change selectEl Value= ",selectEl.value, " confirmBtn value = ", confirmBtn.value);
   });
 // "Confirm" button of form triggers "close" on dialog because of [method="dialog"]
@@ -235,12 +236,21 @@ function NumberInputChanged(element,retstr){
 	}
 }
 
-function parseConfig(arr) {
+function parseConfig(arr,configDate) {
     var out="";
     var i;
     var y;
     var x;
     var seriesLength=chartC.series.length;
+    //var configDate = arr["Configuration Date"];
+    if (configDate ===  undefined)
+    {
+      chartC.setTitle({text: "Temperature Config Data Date: Not Available" });
+    }
+    else
+    {
+      chartC.setTitle({text: "Temperature Config File Data Date: " + configDate});
+    }
     //if (seriesLength > 0 )
     //{
      //   for(var i = seriesLength -1; i > -1; i--) {
@@ -281,19 +291,33 @@ function parseRoastLog(arr,arr1) {
     var addTime = arr["Roasting time adjusted during roast by (min)"];
     var preheat=arr["preheat_steps"];
     var roast=arr["roast_steps"];
+    var configDate=arr["Roasting Log Date"];
     var seriesX=chartR.series[0].select();
     if (chartR.series.length === 2) {
       chartR.destroy();
       chartR=newRoastChart();
     }
-    type=arr["Coffee Type"];
-    if (type ===  undefined)
+
+    var sTitle;
+    if (configDate ===  undefined)
     {
-      chartR.setTitle({text: "Roast Data for Coffee Variety: Not Available" });
+      sTitle= "Roast Log Date: Not Available" ;
     }
     else
     {
-      chartR.setTitle({text: "Roast Data for Coffee Variety: " + type});
+      sTitle="Roast Log Date: " + configDate;
+    }
+
+    type=arr["Coffee Type"];
+    if (type ===  undefined)
+    {
+      chartR.setTitle({text: "Roast Data for Coffee Variety: Not Available"  });
+      chartR.setTitle(null,{ text: sTitle });
+    }
+    else
+    {
+      chartR.setTitle({text: "Roast Data for Coffee Variety: " + type });
+      chartR.setTitle(null,{ text: sTitle });
     }
     if (chartR.series.length === 1) {
       chartR.addSeries({name: 'Servo Position',data:[] , color: '#ff00ff' });
@@ -397,7 +421,7 @@ function ButtonPressEvent(sendstr,element){
         jsondoc=JSON.parse(xhttp.responseText);
 
         if (sendstr == "TEMP_CONFIG_REQ") {
-          parseConfig(jsondoc["steps"]);
+          parseConfig(jsondoc["steps"],jsondoc["Configuration Date"]);
         } 
         else if (sendstr  == "ROAST_LOG_REQ") {
           parseRoastLog(jsondoc);
@@ -422,6 +446,7 @@ function ButtonPressEvent(sendstr,element){
         return false;
     }
 };
+
 var chartT = new Highcharts.Chart({
   chart:{ renderTo : 'tempGraph' },
   title: { text: 'Roast Temperature' },
