@@ -73,9 +73,14 @@
   <br>
   <div class="bodytext">Temperature Sensor</div>
   <br>
+  <label for="tempread" >Temperature Setting:</label>
+  <input type = "text" id = "settemptxt" name = "tempsetread" disabled = "true" size="4">
+  <label for="tempsetread" id="degpref" >Celsius</label>
+  <br>
   <label for="tempread" >Temperature Reading:</label>
   <input type = "text" id = "temptxt" name = "tempread" disabled = "true" size="4">
   <label for="tempread" id="degpref" >Celsius</label>
+
   <br>
   
   <div> 
@@ -438,6 +443,15 @@
                 message = xmldoc[0].firstChild.nodeValue;
                 document.getElementById("servopos").innerHTML=message;
   
+            }
+
+
+            xmldoc = xmlResponse.getElementsByTagName("Set_Temp");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+                message = xmldoc[0].firstChild.nodeValue;
+                document.getElementById("settemptxt").value=message;
+
             }
                        
             xmldoc = xmlResponse.getElementsByTagName("SERVO_POS_NEW");
