@@ -45,7 +45,7 @@ void RunTempConfig (int Step)
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
     sprintf(buff, "\"POS\": %d\n", servoPos);
     appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    if (Step >= ConfigMaxSteps) 
+    if (Step > ConfigMaxSteps) 
       strcpy(buff, "}\n");
     else 
       strcpy(buff, "},\n"); 
@@ -63,7 +63,7 @@ void RunTempConfig (int Step)
     ConfigTimerValue = ConfigTimerStartValue;
   }
 
-  if (Step >= ConfigMaxSteps) {
+  if (Step > ConfigMaxSteps) {
     Serial.print("RunTempConfig Done Send xml Step :");Serial.println(Step);
     //strcat(tempXML, "</ConfigData>\n");
 
