@@ -101,7 +101,7 @@ const char* host="CoffeeRoaster";
 
 int Release = 1;
 int Version = 5;
-int Revision =3;
+int Revision =4;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
@@ -109,6 +109,7 @@ int minUs = 500;
 int maxUs = 2800;//was 2400 and was at 6.5
 int servoPosNew=0;
 int servoPos=0;
+float setTemp=0;
 int servoVal=-1;
 int SERVO_MAX_STEPS=180;
 #endif
@@ -680,8 +681,8 @@ void UpdateTempSlider() {
   // if config data not loaded,get it
   if (!CONFIG_DATA_LOADED)
     readConfigData();
-  float cTemp=getTempVal(servoPosNew);
-  sprintf(buf, "%d %.2f", servoPosNew,cTemp);
+  setTemp=getTempVal(servoPosNew);
+  sprintf(buf, "%d %.2f", servoPosNew,setTemp);
   // now send it back
   Server.send(200, "text/plain", buf); //Send web page
   //Serial.print("UpdateTempSlider Servo Attached = " );Serial.println(TempServo.attached());

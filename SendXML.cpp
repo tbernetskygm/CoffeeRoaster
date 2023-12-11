@@ -150,6 +150,10 @@ void SendXML() {
   // Send Coffee Selected
   sprintf(buf, "<Coffee_Type>%d</Coffee_Type>\n", CoffeeOpt);
   strcat(XML, buf);
+  
+  // Send Set Temp
+  sprintf(buf, "<Set_Temp>%.2f</Set_Temp>\n", setTemp);
+  strcat(XML, buf);
  
     // Timer start stop
   if (PREHEAT_TIMERSTART) {
