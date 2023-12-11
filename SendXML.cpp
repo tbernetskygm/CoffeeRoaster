@@ -105,6 +105,7 @@ void SendXML() {
     PreTimerMin = PreTimerMinNew;
     PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
     PreheatTimerValue = PreheatTimerStartValue;
+    //CooldownTimerValue = PreheatTimerStartValue;
   }
     sprintf(buf, "<PRE_TMIN0>%d</PRE_TMIN0>\n", PreTimerMin);
     strcat(XML, buf);
@@ -117,6 +118,7 @@ void SendXML() {
     PreTimerSec = PreTimerSecNew;
     PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
     PreheatTimerValue = PreheatTimerStartValue;
+    //CooldownTimerValue = PreheatTimerStartValue;
     //Serial.print("SendXML PreheatTimer timer value ");Serial.println(PreheatTimerValue);
   }
     sprintf(buf, "<PRE_TSEC0>%d</PRE_TSEC0>\n", PreTimerSec);
@@ -135,6 +137,18 @@ void SendXML() {
   
   // Send UtilTimer Timer Remaining Time
   sprintf(buf, "<PRE_TIMEREM0>%s</PRE_TIMEREM0>\n", get_timer_string(PreheatTimerValue));
+  strcat(XML, buf);
+  
+  // Send Finish Temp
+  sprintf(buf, "<FINISH_TEMP>%d</FINISH_TEMP>\n", FinishTemp);
+  strcat(XML, buf);
+  
+  // Send Preheat Temp
+  sprintf(buf, "<PREHEAT_TEMP>%d</PREHEAT_TEMP>\n", PreheatTemp);
+  strcat(XML, buf);
+  
+  // Send Coffee Selected
+  sprintf(buf, "<Coffee_Type>%d</Coffee_Type>\n", CoffeeOpt);
   strcat(XML, buf);
  
     // Timer start stop
