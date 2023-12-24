@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <title>Coffee Roaster file downloads</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
     <style type="text/css" media="screen">
       .contextMenu {
         z-index: 300;
@@ -159,6 +160,28 @@
         padding:5px;
       }
     </style>
+  </head>
+  <body onload="onBodyLoad();">
+
+    <div id="uploader"></div>
+    <div id="tree"></div>
+    <div id="editor">
+    <p>
+      <div>
+        <a href="\Roast">Main Page</a><label> - </label>
+        <a href="SysConfig">Configuration</a><label> - </label>
+        <a href="\Graphs">Config Graphs Page</a>
+      </div>
+    </p>
+    </div>
+    <div id="preview" style="display:none;"></div>
+    <iframe id=download-frame style='display:none;'></iframe>
+    <br>
+    <footer class="footer">
+      <p>Page Version:1.0 Date:Sep 9,2023</p>
+    </footer>
+  </body>
+
     <script>
       function createFileUploader(element, tree, editor){
         var xmlHttp;
@@ -680,21 +703,5 @@
       };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.1.9/ace.js" type="text/javascript" charset="utf-8"></script>
-  </head>
-  <body onload="onBodyLoad();">
- 
-    <div id="uploader"></div>
-    <div id="tree"></div>
-    <div id="editor">
-    <p>
-      <div>
-        <a href="\Roast">Main Page</a><label> - </label>
-        <a href="SysConfig">Configuration</a><label> - </label>
-        <a href="\Graphs">Config Graphs Page</a>
-      </div>
-    </p>
-    </div>
-    <div id="preview" style="display:none;"></div>
-    <iframe id=download-frame style='display:none;'></iframe>
-  </body>
+
 </html>

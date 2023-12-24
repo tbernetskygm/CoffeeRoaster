@@ -1,4 +1,5 @@
  <!DOCTYPE html lang="en" class="js-focus-visible">
+ <html>
   </head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="style.css">
@@ -42,16 +43,14 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
   </p>
   <div class="bodytext">Request Roast Log Data</div>
   <button type="button" class = "btn" id = "btnTempConfigRequest" onclick="ButtonPressEvent('ROAST_LOG_REQ','confirmBtn')">Plot Roast Log Data</button>
-  <!--<div class="bodytext">Heap Graph</div>
-  <div id="heap"></div>-->
+
   <div class="bodytext">Temp Graph</div>
   <div id="tempGraph" class="container"></div>
   <div class="bodytext">Temp Config Graph</div>
   <div id="tempConfigGraph" class="container"></div>
   <div class="bodytext">Roast Log Graph</div>
   <div id="roastLogGraph" class="container"></div>
-  <!--<div class="bodytext">Digital Graph</div>
-  <div id="digital"></div>-->
+
 
 <!-- Dialog box to select a file -->
 <dialog id="roastFileDialog">
@@ -59,10 +58,7 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
     <p>
       <label>Select File to plot:
         <select id="json-files"></select>
-        <!--  <option value="default">Choose..</option>
-          <option>Koala Bear</option>
-          <option>Hedgehog</option>
-        </select>-->
+
       </label>
     </p>
     <div>
@@ -70,7 +66,12 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
       <button id="confirmBtn" value="default">Confirm</button>
     </div>
   </form>
+</dialog>
+<footer class="footer" >
+    <p>Page Version:1.0 Date:Dec 10,2023</p>
+</footer>
 </body>
+</html>
 <!--<script type="text/javascript" src="graphs.js"></script>-->
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <!--<script type="text/javascript" src="chart.js"></script>-->

@@ -112,6 +112,16 @@
       color: #AAAAAA;
       line-height: 20px;
     } 
+     .footer {
+        position: absolute;
+        right: 16px;
+        top: 48px;
+        text-align: center;
+        padding: 3px;
+        background-color: lightseagreen;
+        color: white;
+        font-size: 12px;
+      }
      .container {
       max-width: 1800px;
       margin: 0 auto;

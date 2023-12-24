@@ -5,7 +5,7 @@
   <link rel="stylesheet" type="text/css" href="style.css">
   
   </head>
-  <body onload="process()">
+
   <!--<body onpageshow="initData()">-->
 <header>
  <div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menuConnect Menu" alt="AutoConnect menu"/></a></div>
@@ -27,6 +27,7 @@
    
 </header>
 
+<body onload="process()">
   <div class="category" style=color:green>Roaster Controls</div>
 
   <p>
@@ -146,6 +147,9 @@
   <button type="button" class = "btn" id = "btnStart" onclick="ButtonPressEvent('BUTTON_ROAST_START')">Start Roasting</button>
   <br> 
   </main>
+<footer class="footer">
+    <p>Page Version:1.0  Date:Dec 10,2023</p>
+</footer>
   <!-- Dialog box to select a file -->
   <dialog id="roastFileDialog">
     <form method="dialog">
@@ -160,7 +164,9 @@
       <button id="confirmBtn" value="default">Confirm</button>
      </div>
    </form>
+
   </body>
+</html>
   <!-- -->
   <script type = "text/javascript">
   
