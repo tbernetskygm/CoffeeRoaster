@@ -113,14 +113,14 @@
       line-height: 20px;
     } 
      .footer {
-        position: absolute;
+        position: relative;
         right: 16px;
-        top: 48px;
+        top: 30px;
         text-align: center;
         padding: 3px;
         background-color: lightseagreen;
         color: white;
-        font-size: 12px;
+        font-size: 10px;
       }
      .container {
       max-width: 1800px;
