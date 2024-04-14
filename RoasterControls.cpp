@@ -190,7 +190,7 @@ void ProcessCoffeeType() {
   Serial.print("ProcessCoffeeType CoffeeOpt "); Serial.println(CoffeeOpt);
 
   Serial.print("ProcessCoffeeType CoffeeType "); Serial.println(CoffeeType);
-  sprintf(buf, "Opt %d Type %s", CoffeeOpt, CoffeeType);
+  sprintf(buf, "Opt %d Type %s text %s", CoffeeOpt, CoffeeType,t_text);
   Server.send(200, "text/plain", buf); //Send web page
 }
 
