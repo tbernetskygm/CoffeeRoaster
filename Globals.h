@@ -112,6 +112,7 @@ extern int ConfigStepSize;
 extern int ConfigStepsNew;
 extern int ConfigMaxSteps;
 extern int ConfigMaxStepsNew ;
+extern int DebugNum;
 extern String ConfigFile;
 extern String ConfigHighFile;
 extern String Configuration_Date;
@@ -144,6 +145,7 @@ extern char XML[2048];
 //extern char tempXML[];
 // just some buffer holder for char operations
 extern char buf[64];
+extern char buff[512];
 extern bool first;
 void readThermocoupleTemps();
 
