@@ -171,6 +171,7 @@ int ConfigStepSize=1;
 int ConfigStepsNew = 0;
 int ConfigMaxSteps = 1;
 int ConfigMaxStepsNew = 0;
+int DebugNum = 0;
 String ConfigFile="/TempConfig.json";
 String ConfigHighFile="/TempConfigHigh.json";
 String Configuration_Date;
@@ -202,6 +203,7 @@ char XML[2048];
 //char tempXML[1024];
 // just some buffer holder for char operations
 char buf[64];
+char buff[512];
 #ifdef THERMOCOUPLE
 MAX6675 thermocouple(PIN_THERMO_CLK,PIN_THERMO_CS,PIN_THERMO_DO);
 #endif
@@ -301,6 +303,14 @@ void exitOTAError(uint8_t err) {
 }
 #endif
 
+void SetDebug() {
+  String t_state = Server.arg("VALUE");
+  DebugNum = t_state.toInt();
+  Serial.print("SetDebug DebugNum "); Serial.println(DebugNum);
+  //Serial.print("ProcessConfigMaxSteps ConfigMaxStepsNew: "); Serial.println(ConfigMaxStepsNew);
+  sprintf(buf, "%d", DebugNum);
+  Server.send(200, "text/plain", buf); //Send web page
+}
 
 #define FORMAT_FS_IF_FAILED true
 void setup() {
@@ -448,6 +458,7 @@ void setup() {
   Server.on("/START_TEMP_CONFIG", ProcessTempConfig);
   Server.on("/TEMP_CONFIG_REQ", SendTempConfigData); //ConfigTemp.cpp
   Server.on("/ROAST_LOG_REQ", SendRoastLogData); //ConfigTemp.cpp
+  Server.on("/DEBUG_VAL", SetDebug); //CoffeeRoaster.ino
 
   /*handling uploading file */
   Server.on("/update", HTTP_POST, [](){

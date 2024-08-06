@@ -49,12 +49,10 @@
 <br>
 <form>
 
-<div class="bodytext">Redirect Serial Port to file </div>
-<br>
-<input type="radio" id="redirP1" name="redir_file" value="0" onchange="RedirectChanged()" checked>
-<label for="redirP1">Send to Serial Port</label>
-<input type="radio" id="redirP2" name="redir_file" value="1" onchange="RedirectChanged()">
-<label for="redirP2">Send to Log File</label><br>
+<div>
+<div class="bodytext">Set Debug Level </div>
+<input type="number" id = "debugnum" min="0" max="32" step="1" value="0" size="4"  onchange="NumberInputChanged('debugnum','DEBUG_VAL')">Debug Level</input>
+</div>
 </form>
 <br>
 <div class="bodytext">Temp Servo (Pos: <span id="servocmd"></span>)(Act Pos: <span id="servopos"></span>)</div>
@@ -95,7 +93,7 @@
 <br>
 </main>
 <footer class="footer">
-    <p>Page Version:1.0 Date:Sep 9,2023</p>
+    <p>Page Version:1.1 Date:Aug 5,2024</p>
 </footer>
 </body>
 </html>
