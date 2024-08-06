@@ -1,13 +1,20 @@
-#include <SPIFFS.h>
+#include "ProjectDefines.h"
 #include <FS.h>
+#ifdef SPIFFS_FS
+#include <SPIFFS.h>
+#define _FSYS SPIFFS
+#elif defined LITTLEFS_FS
+#include <LittleFS.h>
+#define _FSYS LittleFS
+#endif
 #include <stdio.h>
 #include "Globals.h"
 #include "FileSystemFunctions.h"
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-   Serial.printf("Listing directory: %s\r\n", dirname);
+void listDir( const char * dirname, uint8_t levels){
+   Serial.printf("FileSystemFunctions::listDir Listing directory: %s\r\n", dirname);
 
-   File root = fs.open(dirname);
+   File root = _FSYS.open(dirname);
    if(!root){
       Serial.println("− failed to open directory");
       return;
@@ -23,7 +30,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
          Serial.print("  DIR : ");
          Serial.println(file.name());
          if(levels){
-            listDir(fs, file.name(), levels -1);
+            listDir(file.name(), levels -1);
          }
       } else {
          Serial.print("  FILE: ");
@@ -46,10 +53,10 @@ void printDirectory() {
   }
   String path = Server.arg("dir");
   Serial.printf("printDirectory path %s\n",path.c_str());
-  if (path != "/" && !SPIFFS.exists((char *)path.c_str())) {
+  if (path != "/" && !_FSYS.exists((char *)path.c_str())) {
     return returnFail("BAD PATH");
   }
-  File dir = SPIFFS.open((char *)path.c_str());
+  File dir = _FSYS.open(path);
   path = String();
   if (!dir.isDirectory()) {
     dir.close();
@@ -85,16 +92,16 @@ void printDirectory() {
   dir.close();
 }
 
-bool loadFromFS(fs::FS &fs,String path){
+bool loadFromFS(String path){
 
-  Serial.printf("loadFromFS useSPIFFS %d useSDCARD %d path %s\n", useSPIFFS,useSDCARD,path.c_str());
+  Serial.printf("loadFromFS useFS %d useSDCARD %d path %s\n", useFS,useSDCARD,path.c_str());
   //path.toLowerCase();
   //String dataType = "text/plain";
   String dataType = getContentType(path);
   if(path.endsWith("/")) path += "index.htm";
 
   Serial.printf("loadFromFS file %s dataType %s\n", path.c_str(),dataType);
-  File dataFile = openFile(fs,path.c_str());
+  File dataFile = openFile(path.c_str());
 
   if (!dataFile)
     return false;
@@ -108,9 +115,9 @@ bool loadFromFS(fs::FS &fs,String path){
   return true;
 }
 
-bool exists(fs::FS &fs,String path){
+bool exists(String path){
   bool yes = false;
-  File file = fs.open(path, "r");
+  File file = _FSYS.open(path, "r");
   if(!file.isDirectory()){
     yes = true;
   }
@@ -121,7 +128,7 @@ bool exists(fs::FS &fs,String path){
 void handleNotFound(String file, bool portal){
   String message;
   String path;
-  Serial.printf("handleNotFound useSPIFFS %d useSDCARD %d portal %d\n", useSPIFFS,useSDCARD,portal);
+  Serial.printf("handleNotFound useFS %d useSDCARD %d portal %d\n", useFS,useSDCARD,portal);
   Serial.printf("handleNotFound portal file: %s\n", file.c_str());
   //if (!portal)
  // {
@@ -135,9 +142,9 @@ void handleNotFound(String file, bool portal){
     path = file;
 
   Serial.printf("handleNotFound path: %s Server.uri() %s \n", path.c_str(), Server.uri().c_str());
-  if (useSPIFFS)
+  if (useFS)
   {
-    if(loadFromFS(SPIFFS,path)) return;
+    if(loadFromFS(path)) return;
   }
 #ifdef SD_FS
   if (useSDCARD)
@@ -162,10 +169,31 @@ void handleNotFound(String file, bool portal){
 
 }
 
-File openFile(fs::FS &fs, const char * path, const char * mode){
+File openFile( const char * path, const char * mode){
    Serial.printf("Opening file: %s mode %s \n", path,mode);
+   char test[]="r";
+   File file;
+   int rd=strcmp(mode,test);
+   Serial.printf("Opening file: %s mode %s FILE_READ %s rd %d\n", path,mode,FILE_READ,rd);
+   if(rd == 0 )
+   {
+    file = LittleFS.open(path,FILE_READ);
+   }
+   else
+   {
+    file = LittleFS.open(path,FILE_WRITE);
+   }
+   if(!file || file.isDirectory()){
+       Serial.printf("− failed to open file for mode %s \n",mode);
+       return file ;
+   }
+   return file;
+}
 
-   File file = fs.open(path,mode);
+File openFile( String path, const char * mode){
+   Serial.printf("Opening file: %s mode %s \n", path.c_str(),mode);
+
+   File file = _FSYS.open(path,mode);
    if(!file || file.isDirectory()){
        Serial.printf("− failed to open file for mode %s\n",mode);
        return file ;
@@ -173,10 +201,10 @@ File openFile(fs::FS &fs, const char * path, const char * mode){
    return file;
 }
 
-void readFile(fs::FS &fs, const char * path){
+void readFile(const char * path){
    Serial.printf("Reading file: %s\r\n", path);
 
-   File file = fs.open(path);
+   File file = _FSYS.open(path);
    if(!file || file.isDirectory()){
        Serial.println("− failed to open file for reading");
        return;
@@ -188,10 +216,10 @@ void readFile(fs::FS &fs, const char * path){
    }
 }
 
-void writeFile(fs::FS &fs, const char * path, const char * message){
+void writeFile(const char * path, const char * message){
    Serial.printf("Writing file: %s\r\n", path);
 
-   File file = fs.open(path, FILE_WRITE);
+   File file = _FSYS.open(path, FILE_WRITE);
    if(!file){
       Serial.println("− failed to open file for writing");
       return;
@@ -203,10 +231,10 @@ void writeFile(fs::FS &fs, const char * path, const char * message){
    }
 }
 
-void appendFile(fs::FS &fs, const char * path, const char * message){
+void appendFile( const char * path, const char * message){
    //Serial.printf("Appending to file: %s\r\n", path);
 
-   File file = fs.open(path, FILE_APPEND);
+   File file = _FSYS.open(path, FILE_APPEND);
    if(!file){
       Serial.println("− failed to open file for appending");
       return;
@@ -218,18 +246,18 @@ void appendFile(fs::FS &fs, const char * path, const char * message){
    }
 }
 
-void renameFile(fs::FS &fs, const char * path1, const char * path2){
+void renameFile(const char * path1, const char * path2){
    Serial.printf("Renaming file %s to %s\r\n", path1, path2);
-   if (fs.rename(path1, path2)) {
+   if (_FSYS.rename(path1, path2)) {
       Serial.println("− file renamed");
    } else {
       Serial.println("− rename failed");
    }
 }
 
-void deleteFile(fs::FS &fs, const char * path){
+void deleteFile( const char * path){
    Serial.printf("Deleting file: %s\r\n", path);
-   if(fs.remove(path)){
+   if(_FSYS.remove(path)){
       Serial.println("− file deleted");
    } else {
       Serial.println("− delete failed");
@@ -277,10 +305,10 @@ void handleFileDelete() {
   if (path == "/") {
     return Server.send(500, "text/plain", "BAD PATH");
   }
-  if (!exists(SPIFFS,path)) {
+  if (!exists(path)) {
     return Server.send(404, "text/plain", "FileNotFound");
   }
-  deleteFile(SPIFFS,path.c_str());
+  deleteFile(path.c_str());
   Server.send(200, "text/plain", "");
   path = String();
 }
@@ -292,11 +320,11 @@ void handleFileUpload() {
   }
   HTTPUpload& upload = Server.upload();
   if (upload.status == UPLOAD_FILE_START) {
-    if (exists(SPIFFS,(char *)upload.filename.c_str())) {
-      deleteFile(SPIFFS,(char *)upload.filename.c_str());
+    if (exists((char *)upload.filename.c_str())) {
+      deleteFile((char *)upload.filename.c_str());
     }
     Serial.print("Upload: Opening upload.filename: "); Serial.println(upload.filename.c_str());
-    uploadFile = SPIFFS.open(upload.filename.c_str(), FILE_WRITE);
+    uploadFile = _FSYS.open(upload.filename.c_str(), FILE_WRITE);
     if (uploadFile) 
       Serial.print("Upload: START, filename: "); Serial.println(uploadFile.name());
   } else if (upload.status == UPLOAD_FILE_WRITE) {
@@ -311,7 +339,7 @@ void handleFileUpload() {
     } else {
       Serial.print("Error Upload: could not create filename: "); Serial.println(upload.filename);
     }
-    listDir(SPIFFS,"/",0);//debug
+    listDir("/",0);//debug
   }
 }
 
@@ -340,3 +368,28 @@ void ProcessFileRedirect() {
 #endif
 }
 
+void createDir(fs::FS &fs, const char * path){
+    Serial.printf("Creating Dir: %s\n", path);
+    if(_FSYS.mkdir(path)){
+        Serial.println("Dir created");
+    } else {
+        Serial.println("mkdir failed");
+    }
+}
+
+void removeDir(fs::FS &fs, const char * path){
+    Serial.printf("Removing Dir: %s\n", path);
+    if(_FSYS.rmdir(path)){
+        Serial.println("Dir removed");
+    } else {
+        Serial.println("rmdir failed");
+    }
+}
+
+bool formatFS( bool flag) {
+	return _FSYS.begin(flag);
+}
+
+bool ifFileExists(String file) {
+	return _FSYS.exists(file);
+}

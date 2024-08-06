@@ -1,5 +1,12 @@
-#include <SPIFFS.h>
-
+#include "ProjectDefines.h"
+//#ifdef SPIFFS_FS
+//#include <SPIFFS.h>
+//#define _FSYS SPIFFS
+//#elif def LITTLEFS_FS
+//#include <LittleFS.h>
+//#define _FSYS LittleFS
+//#endif
+//#include <LittleFS.h>
 // Code to run temp configuration
 #include <ESP32Servo.h>
 
@@ -36,21 +43,21 @@ void RunTempConfig (int Step)
   if (Step >= 0 ){
     Serial.print("RunTempConfig step :");Serial.println(Step);
     //strcpy(buff, "{ "); 
-    //appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    //appendFile(LittleFS,fileName.c_str(), cdata_p);
     sprintf(buff, "{\n\"NUM\": %d,\n", Step);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
     sprintf(buff, "\"TMPF\": %.2f,\n", tempAvgF);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
     sprintf(buff, "\"TMPC\": %.2f,\n", tempAvgC);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
     sprintf(buff, "\"POS\": %d\n", servoPos);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
     if (Step > ConfigMaxSteps) 
       strcpy(buff, "}\n");
     else 
       strcpy(buff, "},\n"); 
 
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
 
     servoPosNew=servoPos+ServoPosInc;
     Serial.print("\tRunTempConfig ServoPosInc =");Serial.println(ServoPosInc);
@@ -68,7 +75,7 @@ void RunTempConfig (int Step)
     //strcat(tempXML, "</ConfigData>\n");
 
     sprintf(buff,"]\n}\n");
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    appendFile(fileName.c_str(), cdata_p);
 
     //Serial.print("RunTempConfig Done Send xml length :");Serial.println(strlen(tempXML));
     servoPosNew=0;
@@ -83,7 +90,7 @@ void RunTempConfig (int Step)
 
 void SendTempConfigData()
 {
-  listDir(SPIFFS, "/", 0);
+  listDir( "/", 0);
 #ifndef SENDJSON
   String fileName="/TempConfig.xml";
 #else
@@ -94,32 +101,38 @@ void SendTempConfigData()
   else
 	  fileName=ConfigFile;
 
-  if (SPIFFS.exists(fileName)  )
-  {
-    File file = SPIFFS.open(fileName,"r"); 
-    if (!file || file.isDirectory()){
-      Serial.print("SendTempConfigData - failed to open file : ");Serial.println(fileName);
-      Server.send(201, "text/plain", "No Config Data available!!");
-      return;
-    }
-#ifndef SENDJSON
-    //Server.streamFile(file,"text/xml");
-#else
-    Server.streamFile(file,"application/json");
-    //Server.send(200, "text/plain", "Parsing Config Data");
-    parseJsonFile(fileName);
-    PreheatServoPos=getServoPos(PreheatTemp);
-#endif
-    //file.close();
-    
-  } else {
-    //Server.send(200, "text/xml", "<?xml version = '1.0'?>\n<ConfigData>\n<msg>No Config Data</msg>\n</ConfigData>\n");
-#ifndef SENDJSON
+  //if (LittleFS.exists(fileName)  )
+  //{
+  File file = openFile(fileName.c_str(),"r"); 
+  if (!file || file.isDirectory()){
+    Serial.print("SendTempConfigData - failed to open file : ");Serial.println(fileName);
+    //Server.send(201, "text/plain", "No Config Data available!!");
+    #ifndef SENDJSON
     Server.send(200, "text/xml", "<?xml version = '1.0'?>\n<ConfigData>\n</ConfigData>\n");
 #else
     Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
 #endif
+
+    return;
   }
+#ifndef SENDJSON
+  //Server.streamFile(file,"text/xml");
+#else
+  Server.streamFile(file,"application/json");
+  //Server.send(200, "text/plain", "Parsing Config Data");
+  parseJsonFile(fileName);
+  PreheatServoPos=getServoPos(PreheatTemp);
+#endif
+  //file.close();
+    
+  //} else {
+  //  //Server.send(200, "text/xml", "<?xml version = '1.0'?>\n<ConfigData>\n<msg>No Config Data</msg>\n</ConfigData>\n");
+//#ifndef SENDJSON
+  //  Server.send(200, "text/xml", "<?xml version = '1.0'?>\n<ConfigData>\n</ConfigData>\n");
+//#else
+  //  Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
+//#endif
+  //}
 }
 
 void ProcessTempProbe() {
@@ -154,14 +167,14 @@ void SetupConfigTest()
   else
 	  fileName=ConfigFile;
 
-  if (SPIFFS.exists(fileName)  )
+  if (exists(fileName)  )
   {
-    deleteFile(SPIFFS,fileName.c_str());
+    deleteFile(fileName.c_str());
   }
   strcpy(buff, "{\n\"Configuration Date\": ");
-  writeFile(SPIFFS,fileName.c_str(), cdata_p);
+  writeFile(fileName.c_str(), cdata_p);
   sprintf(buff, "\"%s\",\n\"steps\": [\n",get_date_string().c_str());
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  appendFile(fileName.c_str(), cdata_p);
 
   // calculate servo positions based on ConfigMaxSteps and ConfigSteps
  
@@ -236,7 +249,7 @@ void UpdateHeatGunSlider() {
 
 void SendRoastLogData()
 {
-  listDir(SPIFFS, "/", 0);
+  listDir( "/", 0);
   String fileName;
   String reqFile = "";
   reqFile = Server.arg("VALUE");
@@ -248,9 +261,9 @@ void SendRoastLogData()
 
   Serial.printf("SendRoastLogData -  fileName : <%s> reqFile <%s>\n",fileName.c_str(),reqFile.c_str());
 
-  if (SPIFFS.exists(fileName)  )
+  if (exists(fileName)  )
   {
-    File file = SPIFFS.open(fileName,"r"); 
+    File file = openFile(fileName.c_str(),"r"); 
     if (!file || file.isDirectory()){
       Serial.print("SendRoastLogData - failed to open file : ");Serial.println(fileName);
       Server.send(201, "text/plain", "No Config Data available!!");
@@ -262,5 +275,3 @@ void SendRoastLogData()
     Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
   }
 }
-
-

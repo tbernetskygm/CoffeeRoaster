@@ -1,7 +1,9 @@
-#include <SPIFFS.h>
+//#include <SPIFFS.h>
+#include "ProjectDefines.h"
 #include "Globals.h"
 #include<ArduinoJson.h>
 #include <time.h>
+#include "FileSystemFunctions.h"
 String get_timer_string(int value)
 {
   char  tmpstr[40];
@@ -252,58 +254,59 @@ void parseJsonFile(String filename)
   int servoPos;
 
   Serial.print("parseJsonFile - opening file : ");Serial.println(filename);
-  if (SPIFFS.exists(filename)  )
-  {
-    File file = SPIFFS.open(filename,"r"); 
-    if (!file || file.isDirectory()){
-      Serial.print("parseJsonFile - failed to open file : ");Serial.println(filename);
-      return;
-    }
-    Serial.print("parseJsonFile - opened file : ");Serial.println(filename);
+  //if (SPIFFS.exists(filename)  )
+  //{
+  File file = openFile(filename.c_str(),"r"); 
+  if (!file || file.isDirectory()){
+    Serial.print("parseJsonFile - failed to open file : ");Serial.println(filename);
+    CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+    return;
+  }
+  Serial.print("parseJsonFile - opened file : ");Serial.println(filename);
   
-    // json stuff
-    size_t filesize = file.size();
+  // json stuff
+  size_t filesize = file.size();
     
-    DeserializationError error;
-    error = deserializeJson(jdoc,file);
-    if(error) {
-      Serial.println("deserializeJson() failed");
-      Serial.println(error.f_str());
-      file.close();
-      CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
-      return;
-    }
-    Serial.println("First deserializeJson() worked!!");
+  DeserializationError error;
+  error = deserializeJson(jdoc,file);
+  if(error) {
+    Serial.println("deserializeJson() failed");
+    Serial.println(error.f_str());
     file.close();
-    const char * ConfigurationDate = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
+    CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+    return;
+  }
+  Serial.println("First deserializeJson() worked!!");
+  file.close();
+  const char * ConfigurationDate = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
     // Set Global Variable
   Serial.printf("UtilityFunctions::parseJsonFile ConfigurationDate = %s\n",ConfigurationDate);
     Configuration_Date = ConfigurationDate;
   Serial.printf("UtilityFunctions::parseJsonFile Configuration_Date = %s\n",Configuration_Date.c_str());
 
-for (JsonObject step : jdoc["steps"].as<JsonArray>()) {
+  for (JsonObject step : jdoc["steps"].as<JsonArray>()) {
 
-  unsigned int step_NUM = step["NUM"]; // "1", "2", "3"
+    unsigned int step_NUM = step["NUM"]; // "1", "2", "3"
     //Serial.print("steps num : ");Serial.println(step_NUM);
-  float step_TEMPAVGC = step["TMPC"]; // "29.22", "29.22", "29.22"
+    float step_TEMPAVGC = step["TMPC"]; // "29.22", "29.22", "29.22"
     //Serial.print(": tempc : ");Serial.println(step_TEMPAVGC);
-  float step_TEMPAVGF = step["TMPF"]; // " 72.00", " 72.00", " 72.00"
-  unsigned int step_SERVOPOS = step["POS"]; // "32", "32", "32"
+    float step_TEMPAVGF = step["TMPF"]; // " 72.00", " 72.00", " 72.00"
+    unsigned int step_SERVOPOS = step["POS"]; // "32", "32", "32"
     //Serial.print(": servo pos : ");Serial.println(step_SERVOPOS);
-  // Put in structure of config data
-  tempData[step_NUM-1].ConfigStep=step_NUM;
-  tempData[step_NUM-1].ServoPosition=step_SERVOPOS;
-  tempData[step_NUM-1].tempC=step_TEMPAVGC;
-  tempData[step_NUM-1].tempF=step_TEMPAVGF;
-}
+    // Put in structure of config data
+    tempData[step_NUM-1].ConfigStep=step_NUM;
+    tempData[step_NUM-1].ServoPosition=step_SERVOPOS;
+    tempData[step_NUM-1].tempC=step_TEMPAVGC;
+    tempData[step_NUM-1].tempF=step_TEMPAVGF;
+  }
   // config data has NUM (int) , TEMPAVGF(float), TEMPAVGC(float) , SERVOPOS (int)
     file.close();
     CONFIG_DATA_LOADED = true; // Flag used to tell that config data was loaded
-  } else 
-  {
-    Serial.print("parseJsonFile no file : ");Serial.println(filename);
-    CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
-  }
+ // } else 
+ // {
+ //   Serial.print("parseJsonFile no file : ");Serial.println(filename);
+ //   CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+ // }
 }
 
 // the idea is to read the temp value for x number of seconds

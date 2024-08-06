@@ -372,8 +372,8 @@ String SetRoastFilename()
 void SetupRoastingLog()
 {
   String fileName;
-  char buff[64]= {'\0'};
-  char * cdata_p=&buff[0];
+  //char buff[64]= {'\0'};
+  char * cdata_p=&buf[0];
   RoastLogFile=SetRoastFilename();
   fileName=RoastLogFile;
   String tempType;
@@ -382,48 +382,48 @@ void SetupRoastingLog()
   else
 	  tempType="degrees C";
 
-  if (SPIFFS.exists(fileName)  )
+  if (exists(fileName)  )
   {
-    deleteFile(SPIFFS,fileName.c_str());
+    deleteFile(fileName.c_str());
   }
   Serial.printf("SetupRoastingLog file name : %s\n",fileName.c_str());
-  strcpy(buff, "{\n\t\"Roasting Log Date\": ");
-  writeFile(SPIFFS,fileName.c_str(), cdata_p);
-  Serial.printf("SetupRoastingLog get_date\n");
-  sprintf(buff, "\"%s\",\n",get_date_string().c_str());
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
-  sprintf(buff, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  strcpy(buf, "{\n\t\"Roasting Log Date\": ");
+  writeFile(fileName.c_str(), cdata_p);
+  Serial.printf("SetupRoastingLog get_date buf length %d\n",strlen(buf));
+  sprintf(buf, "\"%s\",\n",get_date_string().c_str());
+  appendFile(fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
-  sprintf(buff, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
-  sprintf(buff, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
+  appendFile(fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog preheat time %d\n",PreheatTimerStartValue);
-  sprintf(buff, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog preheat temp %d\n",PreheatTemp);
-  sprintf(buff, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
-  sprintf(buff, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
+  appendFile(fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Roast time %d\n",TimerStartValue);
-  sprintf(buff, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog final temp\n");
-  sprintf(buff, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
-  sprintf(buff, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
+  appendFile(fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
-  sprintf(buff, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  sprintf(buf, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
+  appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
   if (HEATGUNHIGH == 1)
-    sprintf(buff, "\t\"Heatgun Speed\": \"High\",\n");
+    sprintf(buf, "\t\"Heatgun Speed\": \"High\",\n");
   else
-    sprintf(buff, "\t\"Heatgun Speed\": \"Low\",\n");
-  appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf, "\t\"Heatgun Speed\": \"Low\",\n");
+  appendFile(fileName.c_str(), cdata_p);
   
   Serial.printf("SetupRoastingLog done\n");
 }
@@ -440,34 +440,50 @@ void CloseRoastingLog(bool manualStop)
   {
     Serial.printf("--- Manual Stop ---\n");
     // Stopped manually for some reason
-    sprintf(buff,"\t],\n"); // close roast_steps array
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    sprintf(buff, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf,"\t],\n"); // close roast_steps array
+    strcat(buff,buf);
+    Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
+    sprintf(buf, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
+    strcat(buff,buf);
+    Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
     if (TimerAdjust)
     {
-      sprintf(buff, ",\n\t\"Roasting time adjusted during roast by (min)\": %d\n",TimerMin0New);
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, ",\n\t\"Roasting time adjusted during roast by (min)\": %d\n",TimerMin0New);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      //appendFile(fileName.c_str(), cdata_p);
     }
     // close the json string
-    sprintf(buff,"\n}\n");
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf,"\n}\n");
+    strcat(buff,buf);
+    Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
   }
   else
   {
     // stopped because roasting was finished
     // this closes roast_steps array "]" and then the json with "}"
-    sprintf(buff,"\n\t]");
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf,"\n\t]");
+    strcat(buff,buf);
+    Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
     if (TimerAdjust)
     {
-      sprintf(buff, ",\n\t\"Roasting time was adjusted during roast by (min)\": %d\n",TimerMin0New);
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, ",\n\t\"Roasting time was adjusted during roast by (min)\": %d\n",TimerMin0New);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      //appendFile(fileName.c_str(), cdata_p);
     }
+    sprintf(buf, ",\t\"Roasting Finished at\": \"%s\"",get_date_string().c_str());
+    strcat(buff,buf);
     // close the json string
-    sprintf(buff,"}\n");
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf,"}\n");
+    strcat(buff,buf);
+    Serial.printf("** buff size %d\n",strlen(buff));
   }
+  appendFile(fileName.c_str(), cdata_p);
 
 }
 
@@ -479,9 +495,9 @@ void readConfigData()
   else
 	  fileName=ConfigFile;
 
-  if (SPIFFS.exists(fileName)  )
+  if (exists(fileName)  )
   {
-    File file = SPIFFS.open(fileName,"r"); 
+    File file = openFile(fileName,"r"); 
     if (!file || file.isDirectory()){
       Serial.print("SendTempConfigData - failed to open file : ");Serial.println(fileName);
       return;
@@ -499,9 +515,10 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
 	// but it broke the logging stuff Didn't put in the 
 	// "preheat_steps":[  or "roast_steps":[ t
   String fileName;
-  char buff[64]= {'\0'};
+  char buff[256]= {'\0'};
   char * cdata_p=&buff[0];
   static bool endPreheat=false;
+  int buflen=0;
   fileName=RoastLogFile;
   
   Serial.printf("---UpdateRoastingLog file roast %d first %d endPreheat %d last %d stop %d\n",roast,first,endPreheat,last,stop);
@@ -512,15 +529,22 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
    
   if (PREHEAT)
   {
-	  Serial.printf("Preheat steps\n");
+    Serial.printf("Preheat steps\n");
     // This starts the preheat_steps array
     if(!roast && first){
-	  Serial.printf("** First Preheat step ***\n");
       sprintf(buff, "\t\"preheat_steps\": [\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      Serial.printf("** First Preheat step *** buf size %d\n",strlen(buff));
+      buflen+=strlen(buff);
+      //appendFile(fileName.c_str(), cdata_p);
     }
-    sprintf(buff, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
+      Serial.printf("** buf size %d\n",strlen(buf));
+      buflen+=strlen(buf);
+    //if (strlen(buff) > 0)
+    //{
+      strcat(buff,buf);
+    //}	    
+    //appendFile(fileName.c_str(), cdata_p);
   } 
   else if (ROAST) 
   {
@@ -530,8 +554,10 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
 	  Serial.printf("** First Roast step ***\n");
       //sprintf(buff, "\n\t],\n");
       //appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      sprintf(buff, "\n\t\"roast_steps\": [\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, "\n\t\"roast_steps\": [\n");
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      //appendFile(fileName.c_str(), cdata_p);
       //endPreheat=true;
     }
    // else if (!endPreheat && first ){
@@ -544,44 +570,69 @@ void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
 //      appendFile(SPIFFS,fileName.c_str(), cdata_p);
 //      endPreheat=true;
 //    }
-     sprintf(buff, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+     sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
   }
   else if (stop) {
 	  // If stopped in the middle add one more of these to 
 	  // make json file valid 
-    sprintf(buff, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+    sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+    //appendFile(fileName.c_str(), cdata_p);
   }
-    sprintf(buff, "\t\t\"TMPF\": %.2f,\n", tempF);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    sprintf(buff, "\t\t\"TMPC\": %.2f,\n", tempC);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    sprintf(buff, "\t\t\"POS\": %d\n", servoPos);
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
-    sprintf(buff, "\t}");
-    appendFile(SPIFFS,fileName.c_str(), cdata_p);
+  // this gets added to each entry
+    sprintf(buf, "\t\t\"TMPF\": %.2f,\n", tempF);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      buflen+=strlen(buf);
+    //appendFile(fileName.c_str(), cdata_p);
+    sprintf(buf, "\t\t\"TMPC\": %.2f,\n", tempC);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      buflen+=strlen(buf);
+    //appendFile(fileName.c_str(), cdata_p);
+    sprintf(buf, "\t\t\"POS\": %d\n", servoPos);
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      buflen+=strlen(buf);
+    //appendFile(fileName.c_str(), cdata_p);
+    sprintf(buf, "\t}");
+      strcat(buff,buf);
+      Serial.printf("** buff size %d\n",strlen(buff));
+      buflen+=strlen(buf);
+    //appendFile(fileName.c_str(), cdata_p);
     // put in a comma before next entry 
     if ( !last )
     {
       Serial.printf("UpdateRoastingLog adding comma file first %d endPreheat %d last %d\n",first,endPreheat,last);
       //sprintf(buff, ", first %d last %d\n", first , last);
-      sprintf(buff, ",\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, ",\n");
+      strcat(buff,buf);
+      buflen+=strlen(buf);
+      //appendFile(fileName.c_str(), cdata_p);
     }
     else if (!roast && last)
     {
       Serial.printf("UpdateRoastingLog last preheat step roast %d endPreheat %d last %d\n",roast,endPreheat,last);
-      sprintf(buff, "\n\t],\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, "\n\t],\n");
+      strcat(buff,buf);
+      buflen+=strlen(buf);
+      //appendFile(fileName.c_str(), cdata_p);
 
     } else {
       Serial.printf("UpdateRoastingLog adding newline only file first %d endPreheat %d last %d\n",first,endPreheat,last);
       //sprintf(buff, " first %d last %d\n", first,last);
-      sprintf(buff, "\n");
-      appendFile(SPIFFS,fileName.c_str(), cdata_p);
+      sprintf(buf, "\n");
+      strcat(buff,buf);
+      buflen+=strlen(buf);
+      //appendFile(fileName.c_str(), cdata_p);
   }
   
+  appendFile(fileName.c_str(), cdata_p);
+  Serial.printf("UpdateRoastingLog total buffer length %d\n",buflen);
 	
 }
 

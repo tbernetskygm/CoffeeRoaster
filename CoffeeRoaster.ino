@@ -1,5 +1,6 @@
+#include "ProjectDefines.h"
+#include<Arduino.h>
 
-#include <SPIFFS.h>
 #include <ArduinoJson.h>
 #include <time.h>
 #include <ESPmDNS.h>
@@ -12,15 +13,9 @@
   This software is released under the MIT License.
   https://opensource.org/licenses/MIT
 */
-#define FILESYSTEM SPIFFS
-#define SPIFFS_FS
-#define CONFIG_PAGE
-#define GRAPH_PAGE
-#define Tempservo
-#define THERMOCOUPLE
-#define OTA_T
-
-//#define WEBSERIAL
+/* Manually upload data
+python3 .arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool.py --chip auto --port /dev/ttyUSB0 --baud 115200 write_flash 0xeb000 /tmp/arduino_build_924397/CoffeeRoaster.spiffs.bin
+*/
 #if defined(ARDUINO_ARCH_ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -99,9 +94,9 @@ ConfigStruct tempData[180];
 //DynamicJsonDocument jdoc(1024);
 const char* host="CoffeeRoaster";
 
-int Release = 1;
-int Version = 5;
-int Revision =4;
+int Release = _RELEASE;
+int Version = _VERSION;
+int Revision = _REVISION;
   
 #ifdef Tempservo
 // Published values for SG90 servos; adjust if needed
@@ -123,7 +118,7 @@ int FanSpeed = 0;
 int BeanQuantity=0;
 int CoffeeOpt=0;
 String CoffeeType="";
-bool useSPIFFS=false;
+bool useFS=false;
 bool useSDCARD=false;
 bool opened=false;
 bool ROAST = false; // start roasting process
@@ -243,7 +238,7 @@ void print_reset_reason(RESET_REASON reason)
 
 #include "ConfigPage.h"
 #include "WebPage.h"
-#ifdef FILESYSTEM
+#ifdef USE_FSYS
 #include "FileSystemFunctions.h"
 #endif
 
@@ -307,7 +302,7 @@ void exitOTAError(uint8_t err) {
 #endif
 
 
-#define FORMAT_SPIFFS_IF_FAILED true
+#define FORMAT_FS_IF_FAILED true
 void setup() {
 
   Config.apid = "CoffeeRoaster";
@@ -340,13 +335,15 @@ void setup() {
   Serial.println("CPU1 reset reason: ");
   print_reset_reason(rtc_get_reset_reason(1));
 #endif  
-#ifdef SPIFFS_FS
-  if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-    Serial.println("An Error has occurred while mounting SPIFFS");
+#ifdef USE_FSYS
+  if(!formatFS(FORMAT_FS_IF_FAILED)){
+    Serial.println("An Error has occurred while mounting FS");
     return;
   }
-  useSPIFFS=true;
-  listDir(SPIFFS, "/", 0);
+  
+  useFS=true;
+  Serial.println("CoffeeRoaster getting directory listing");
+  listDir("/", 0);
 #endif
   #ifdef Tempservo
   int servoStat =0;
@@ -460,7 +457,7 @@ void setup() {
     File root;
     if(opened == false){
       opened = true;
-      root = SPIFFS.open((String("/") + upload.filename).c_str(), FILE_WRITE);  
+      root = openFile((String("/") + upload.filename).c_str(), FILE_WRITE);  
       if(!root){
         Serial.println("- failed to open file for writing");
         return;
@@ -515,7 +512,7 @@ void loop() {
     ESP.restart();
 #endif
     Serial.println("Wifi Idle restarting");
-    delay(1000);
+    delay(500);
   }
 
 #ifdef Tempservo
