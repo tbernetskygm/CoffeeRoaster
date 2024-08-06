@@ -1,4 +1,5 @@
 // This has code to handle Buttons and User interface for main roaster page
+#include "ProjectDefines.h"
 #include "Globals.h"
 #include "RoasterControls.h"
 #include "UtilTimer.h"
@@ -373,7 +374,7 @@ void SetupRoastingLog()
 {
   String fileName;
   //char buff[64]= {'\0'};
-  char * cdata_p=&buf[0];
+  char * cdata_p=&buff[0];
   RoastLogFile=SetRoastFilename();
   fileName=RoastLogFile;
   String tempType;
@@ -387,43 +388,85 @@ void SetupRoastingLog()
     deleteFile(fileName.c_str());
   }
   Serial.printf("SetupRoastingLog file name : %s\n",fileName.c_str());
-  strcpy(buf, "{\n\t\"Roasting Log Date\": ");
-  writeFile(fileName.c_str(), cdata_p);
+  sprintf(buff, "\0");
+  sprintf(buf, "{\n\t\"Roasting Log Date\": ");
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //writeFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog get_date buf length %d\n",strlen(buf));
   sprintf(buf, "\"%s\",\n",get_date_string().c_str());
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  //appendFile(fileName.c_str(), cdata_p);
   sprintf(buf, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
   sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   sprintf(buf, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog preheat time %d\n",PreheatTimerStartValue);
   sprintf(buf, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog preheat temp %d\n",PreheatTemp);
   sprintf(buf, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   sprintf(buf, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Roast time %d\n",TimerStartValue);
   sprintf(buf, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog final temp\n");
   sprintf(buf, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   sprintf(buf, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
   sprintf(buf, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
-  appendFile(fileName.c_str(), cdata_p);
+  strcat(buff,buf);
+  WHENDEBUG(5)
+    Serial.printf("** buff size %d\n",strlen(buff));
+  //appendFile(fileName.c_str(), cdata_p);
   Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
   if (HEATGUNHIGH == 1)
+  {
     sprintf(buf, "\t\"Heatgun Speed\": \"High\",\n");
+    strcat(buff,buf);
+    WHENDEBUG(5)
+      Serial.printf("** buff size %d\n",strlen(buff));
+  }
   else
+  {
     sprintf(buf, "\t\"Heatgun Speed\": \"Low\",\n");
-  appendFile(fileName.c_str(), cdata_p);
+    strcat(buff,buf);
+    WHENDEBUG(5)
+      Serial.printf("** buff size %d\n",strlen(buff));
+  }
+  writeFile(fileName.c_str(), cdata_p);
   
   Serial.printf("SetupRoastingLog done\n");
 }
@@ -442,24 +485,20 @@ void CloseRoastingLog(bool manualStop)
     // Stopped manually for some reason
     sprintf(buf,"\t],\n"); // close roast_steps array
     strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
+    //Serial.printf("** buff size %d\n",strlen(buff));
     sprintf(buf, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
     strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
+    //Serial.printf("** buff size %d\n",strlen(buff));
     if (TimerAdjust)
     {
       sprintf(buf, ",\n\t\"Roasting time adjusted during roast by (min)\": %d\n",TimerMin0New);
       strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      //appendFile(fileName.c_str(), cdata_p);
+      //Serial.printf("** buff size %d\n",strlen(buff));
     }
     // close the json string
     sprintf(buf,"\n}\n");
     strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
+    //Serial.printf("** buff size %d\n",strlen(buff));
   }
   else
   {
@@ -468,13 +507,11 @@ void CloseRoastingLog(bool manualStop)
     sprintf(buf,"\n\t]");
     strcat(buff,buf);
     Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
     if (TimerAdjust)
     {
       sprintf(buf, ",\n\t\"Roasting time was adjusted during roast by (min)\": %d\n",TimerMin0New);
       strcat(buff,buf);
       Serial.printf("** buff size %d\n",strlen(buff));
-      //appendFile(fileName.c_str(), cdata_p);
     }
     sprintf(buf, ",\t\"Roasting Finished at\": \"%s\"",get_date_string().c_str());
     strcat(buff,buf);
