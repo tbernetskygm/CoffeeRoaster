@@ -1,6 +1,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include "ProjectDefines.h"
 #include "GlobalStructs.h"
 #if defined(ARDUINO_ARCH_ESP8266)
 #include <ESP8266WiFi.h>
@@ -12,7 +13,6 @@
 
 #include <FS.h>
 #include <ArduinoJson.h>
-#define Tempservo
 #ifdef Tempservo
 #include <ESP32Servo.h>
 extern Servo TempServo;
@@ -61,7 +61,7 @@ extern int BeanQuantity;
 extern int CoffeeOpt;
 extern String CoffeeType;
 
-extern bool useSPIFFS;
+extern bool useFS;
 extern bool useSDCARD;
 extern bool ROAST ; // start roasting process
 extern bool MIXPWR; // control stirring beans
