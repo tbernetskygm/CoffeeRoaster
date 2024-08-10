@@ -43,6 +43,7 @@ extern int Revision;
 //#define PIN_SERVO 13
 extern int servoPos;
 extern int servoPosNew;
+extern int tempSensorSelect;
 extern float setTemp;
 extern int SERVO_MAX_STEPS;
 #endif

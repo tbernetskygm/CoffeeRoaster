@@ -104,6 +104,7 @@ int minUs = 500;
 int maxUs = 2800;//was 2400 and was at 6.5
 int servoPosNew=0;
 int servoPos=0;
+int tempSensorSelect=0;
 float setTemp=0;
 int servoVal=-1;
 int SERVO_MAX_STEPS=180;
@@ -257,6 +258,12 @@ void readThermocoupleTemps()
 {
   tempC=thermocouple.readCelsius();
   tempF=thermocouple.readFahrenheit();
+}
+
+void readThermistorTemps()
+{
+  tempC=readTemp(false);
+  tempF=readTemp(true);
 }
 
 void printLocalTime()
@@ -466,6 +473,7 @@ void setup() {
   Server.on("/TEMP_PROBE", ProcessTempProbe);
   Server.on("/REDIRECT", ProcessFileRedirect);
   Server.on("/UPDATE_TEMP_SLIDER", UpdateTempSlider);
+  Server.on("/UPDATE_TEMPSENSOR_SLIDER", UpdateTempSensorSlider);
   Server.on("/UPDATE_HEATGUN_SLIDER", UpdateHeatGunSlider);
   
   Server.on("/TEMP_CONFIG_MAX_STEPS", ProcessConfigMaxSteps);
@@ -590,7 +598,10 @@ void loop() {
     }
 #endif
   }
-  readThermocoupleTemps();
+  if (tempSensorSelect == 0)
+    readThermocoupleTemps();
+  else
+    readThermistorTemps();
   //Serial.print("C = "); 
   //Serial.println(thermocouple.readCelsius());
   delay(500);
@@ -625,4 +636,18 @@ void UpdateTempSlider() {
   Server.send(200, "text/plain", buf); //Send web page
   //Serial.print("UpdateTempSlider Servo Attached = " );Serial.println(TempServo.attached());
   //Serial.print("UpdateTempSlider Servo read = " );Serial.println(servoVal);
+}
+
+
+
+void UpdateTempSensorSlider() {
+  String t_state ="";
+  t_state = Server.arg("VALUE");
+  // convert the string sent from the web page to an int
+  tempSensorSelect = t_state.toInt();
+  Serial.print("UpdateTempSensorSlider new : "); Serial.println(tempSensorSelect);
+  // if config data not loaded,get it
+  sprintf(buf, "TempSensorSelect %d ", tempSensorSelect);
+  // now send it back
+  Server.send(200, "text/plain", buf); //Send web page
 }

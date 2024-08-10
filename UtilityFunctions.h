@@ -11,3 +11,4 @@ double CalcAvgTemp(double  temps, int timeval);
 int getServoPos( int temp);
 float getTempVal( int pos);
 int adjustTemp(int setPoint);
+double readTemp(bool F);

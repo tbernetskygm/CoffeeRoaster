@@ -45,9 +45,19 @@
 <label for="tempF">F</label>
 <input type="radio" id="tempC" name="temp_preference" value="C" onchange="TempConfigChanged()" checked >
 <label for="tempC">C</label><br>
+
+<div class="bodytext">Temp Sensor Ext/Internal(testing)</div>
+<br>
+<div class="bodyinfo">External</div>
+<input type="range" class="toggleslider" id="tempsensor" min="0" max="1" value = "0" width = "0%" oninput="UpdateTempSensorSetting(this.value)"/>
+<div class="bodyinfo">Internal</div>
+<br>
+
 </form>
 <br>
 <form>
+
+
 
 <div>
 <div class="bodytext">Set Debug Level </div>
@@ -208,7 +218,8 @@ function response(){
 			xmldoc = xmlResponse.getElementsByTagName("VERSION");
 			if(xmldoc.length >0 ) //Check for valid response
 			{
-				message = xmldoc[0].firstChild.nodeValue;                   document.getElementById("sw_version").innerHTML = message;
+				message = xmldoc[0].firstChild.nodeValue;
+					document.getElementById("sw_version").innerHTML = message;
 			}
 			xmldoc = xmlResponse.getElementsByTagName("SERVO_POS");
 			if(xmldoc.length >0 ) //Check for valid response
@@ -233,6 +244,20 @@ function response(){
 			{
 				message = xmldoc[0].firstChild.nodeValue;
 				document.getElementById("configtimestep").value = message;
+			}
+			// thermocouple or thermistor temp
+			xmldoc = xmlResponse.getElementsByTagName("TEMP_SENSOR");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("tempsensor").value = message;
+			}
+			// Debug setting
+			xmldoc = xmlResponse.getElementsByTagName("DEBUG");
+			if(xmldoc.length >0 ) //Check for valid response
+			{
+				message = xmldoc[0].firstChild.nodeValue;
+				document.getElementById("debugnum").value = message;
 			}
         }
 	}
@@ -323,6 +348,21 @@ function UpdateHeatGunSetting(value){
 	xhttp.open("PUT","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
 	xhttp.send();
 }
+
+
+function UpdateTempSensorSetting(value){
+	var xhttp = new XMLHttpRequest;
+	timeoutValue = 100 ;
+	//xhttp.onreadystatechange = function() {
+	//	if (this.readyState == 4 && this.status ==200) {
+	//	document.getElementById("servocmd").innerHTML=this.responseText;
+	//	}
+	//}
+	// syntax is really weird
+	xhttp.open("PUT","UPDATE_TEMPSENSOR_SLIDER?VALUE="+value,true);
+	xhttp.send();
+}
+
 function ButtonPressEvent(sendstr){
 	var xhttp = new XMLHttpRequest;
 	var message;
