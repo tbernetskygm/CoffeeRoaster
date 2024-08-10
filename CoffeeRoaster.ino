@@ -209,6 +209,8 @@ MAX6675 thermocouple(PIN_THERMO_CLK,PIN_THERMO_CS,PIN_THERMO_DO);
 #endif
 // for UpdateRoasting log
 bool first=true;
+RoastState  R_State;
+RoastState * rState=&R_State;
 #ifdef PRINT_RESET
 void print_reset_reason(RESET_REASON reason)
 {
@@ -327,7 +329,7 @@ void setup() {
   Portal.onOTAProgress(exitOTAProgress);
   Portal.onOTAError(exitOTAError);
 #endif
-  //RoastPreferences.begin("CoffeeRoaster",false);
+  
   delay(1000);
   Serial.begin(115200);
   Serial.println();
@@ -382,6 +384,19 @@ void setup() {
   // Create semaphore to inform us when the timer has fired
   roastTimerSemaphore = xSemaphoreCreateBinary();
   utilTimerSemaphore = xSemaphoreCreateBinary();
+  rState->doRoast=false;
+  rState->roast=false;
+  rState->preheat=false;
+  rState->first=true;
+  rState->last=false;
+  rState->stopit=false;
+  rState->heaterpwr=true;
+  rState->mixerpwr=false;
+  rState->timerStart=false;
+  rState->preheatTimerStart=false;
+  rState->fileName="";
+  // setup task to update roast stuff
+  xTaskCreate(UpdateRoastingLog,"Update Roast Log",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
 
   Server.on("/", handleNewRoot);
   Server.on("/Roast", handleNewRoot);
@@ -512,6 +527,7 @@ void setup() {
 
 void loop() {
   //Serial.println("This is loop()");
+  static bool servoMoving = false;
   Server.handleClient();
   Portal.handleRequest();   // Need to handle AutoConnect menu.
   if (WiFi.status() == WL_IDLE_STATUS) {
@@ -530,6 +546,7 @@ void loop() {
  // init servoPos =0 servoPosNew 0 
   if ( servoPos != servoPosNew)
   {
+    servoMoving=true;
     //Serial.print("Loop servoPosNew "); Serial.println(servoPosNew);
     //Serial.print("Loop servoPos "); Serial.println(servoPos);
     // rotate the servo
@@ -546,49 +563,11 @@ void loop() {
       servoPos=servoPosNew;
     //Serial.print("Loop Servo Attached = " );Serial.println(TempServo.attached());
     //Serial.print("Loop Servo read = " );Serial.println(servoPos);
+  } else {
+    // Servo has moved to position
+    servoMoving=false;
   }
 #endif
-  // check for roastTimerSemaphore
-  if (xSemaphoreTake(roastTimerSemaphore, 0) == pdTRUE){
-    Serial.printf("roastTimerSemaphore time  : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
-    if (TimerValue <=0 )
-    {
-      // Clean up after roasting
-      TIMERSTART = false;
-      Serial.printf("roastTimerSemaphore STOPPING time : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
-      tempSamples=10;
-      ClearRoastTimer();
-      UpdateRoastingLog(ROAST,first,true); // set last to true so comma doesn't get added
-      if (ROAST)
-      {
-	// turn off the mixer if it is on 
-	if (MIXPWR)
-	  ProcessButtonMixPwr();
-	// turn off the heater
-	if (!HEATERPWR)
-	  ProcessButtonHeaterPwr();
-	// stop roasting
-	ROAST = !ROAST;
-        //normal stop
-	CloseRoastingLog();
-    Serial.printf("roastTimerSemaphore 1 reset first : %d \n",first);
-	first=true;
-	// set tempSamples back to 10
-        tempSamples=10;
-      }
-      servoPosNew=0;
-    }
-    else {
-      if (TimerValue%tempSamples==0 && ROAST) // dont do update if roast was stopped
-      {
-	Serial.printf("roastTimerSemaphore UpdateRoastingLog time  : %d ROAST: %d\n",TimerValue,ROAST);
-	//first=true;
-	UpdateRoastingLog(ROAST,first);
-	if (first)
-	  first=!first;
-      }
-    }
-  }
 
   // check for utilTimerSemaphore
   if (xSemaphoreTake(utilTimerSemaphore, 0) == pdTRUE){
@@ -610,55 +589,6 @@ void loop() {
       }
     }
 #endif
-    if (PREHEAT_TIMERSTART  )
-      Serial.printf("utilTimerSemaphore UpdateRoastingLog time  : %d tempSamples : %d PreheatTimer-tempSamples %d\n",PreheatTimerValue,tempSamples,PreheatTimerValue%tempSamples);
-
-    if (PREHEAT_TIMERSTART && (PreheatTimerValue%tempSamples == 0) && (PreheatTimerValue > 0) )
-    {
-      Serial.printf("utilTimerSemaphore UpdateRoastingLog time  : %d ServoPos : %d PreheatServoPos %d\n",PreheatTimerValue,servoPos,PreheatServoPos);
-      UpdateRoastingLog(false,first); // 
-      if (first)
-	first=!first;
-      //Serial.print("Calling adjustTemp x= ");
-      //int x=adjustTemp(PreheatTemp);
-      //Serial.println(x);
-    }
-    else if (PREHEAT_TIMERSTART && PreheatTimerValue == 0)
-    {
-      Serial.printf("In Loop utilTimerSemaphore is true End of Preheat Time!!!!\n");
-      Serial.printf("In Loop utilTimerSemaphore is true PreheatTimer is %d\n",PreheatTimerValue);
-      Serial.printf("In Loop utilTimerSemaphore Roast %d TIMERSTART %d \n",ROAST, TIMERSTART );
-      if (!first)
-	UpdateRoastingLog(false,first,true); // set last to true so comma doesn't get added
-      ClearUtilTimer();
-      PREHEAT_TIMERSTART=false;
-      PREHEAT=false;
-      if (ROAST && !TIMERSTART)
-      {
-	// set tempSamples to 5
-        tempSamples=5;
-	// turn up the temp
-	// bu make sure it is not set to 0
-        if (FinishServoPos < servoPos)
-	  servoPosNew= servoPos + 20; // incase final temp is set higher than config data
-	else
-	  servoPosNew=FinishServoPos;
-	Serial.printf("In Loop utilTimerSemaphore call ProcessButtonTimerStart Roast %d TIMERSTART %d \n",ROAST, TIMERSTART );
-        ProcessButtonTimerStart();
-      } else {
-	CloseRoastingLog();
-	// just doing preheat set servo to 0
-	servoPosNew=0;
-
-    Serial.printf("utilTimerSemaphore UpdateRoastingLog reset first : %d \n",first);
-	first=true;
-
-	// turn off heater if it is on
-	if (!HEATERPWR)
-	  ProcessButtonHeaterPwr();
-      }
-      
-    }
   }
   readThermocoupleTemps();
   //Serial.print("C = "); 
