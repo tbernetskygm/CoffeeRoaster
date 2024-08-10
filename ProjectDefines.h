@@ -18,15 +18,15 @@
 //
 // These are I/O Defines
 
-#define PIN_SERVO 15
-#define PIN_MIXER_DIR 18
-#define PIN_MIX_POWER_ENABLE 2 // turn on power to mixer Same as builtin LED
-#define PIN_HEATER_POWER_ENABLE 0 // turn on power to heat gun
+#define PIN_SERVO 15 // IO15 pin 23
+#define PIN_MIXER_DIR 18 //IO18 pin 30
+#define PIN_MIX_POWER_ENABLE 2 // turn on power to mixer Same as builtin LED IO2 pin 24
+#define PIN_HEATER_POWER_ENABLE 0 // turn on power to heat gun IO0 pin 25
 // Analog In for Temp Sensor Have to use ADC1 Ch 0 because we are using WiFi
-#define PIN_TEMP_SENSOR 36
+#define PIN_TEMP_SENSOR 36 // SENSOR_VP pin 5
 #ifdef THERMOCOUPLE
-#define PIN_THERMO_CLK 5 // thermocouple CLK VSPICSO
-#define PIN_THERMO_CS 23 // thermocouple CS  VSPID
-#define PIN_THERMO_DO 19 // thermocouple DO  VSPIQ
+#define PIN_THERMO_CLK 5 // thermocouple CLK VSPICSO IO5 pin 29
+#define PIN_THERMO_CS 23 // thermocouple CS  VSPID IO23 pin 37
+#define PIN_THERMO_DO 19 // thermocouple DO  VSPIQ IO19 pin 31
 #endif
 
