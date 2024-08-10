@@ -41,15 +41,13 @@ void IRAM_ATTR onPreHeatTimer() {
   {
     Serial.printf("onPreHeatTimer() Finished Step PreHeatTimerValue = %d\n",PreheatTimerValue);
       // Give a semaphore that we can check in the loop
-      xSemaphoreGiveFromISR(utilTimerSemaphore, NULL);
         // Next step
   } else {
     Serial.printf("onPreHeatTimer() %d \n",PreheatTimerValue);
-    // Give a semaphore that we can check in the loop
-    xSemaphoreGiveFromISR(utilTimerSemaphore, NULL);
     
     PreheatTimerValue--;
   }
+  xSemaphoreGiveFromISR(roastTimerSemaphore, NULL);
 }
 
 void SetupConfigTimer()
@@ -104,7 +102,7 @@ void SetupPreheatTimer()
   //Specify timer timeout value
   // 1000000 microseconds = 1 second
   timerAlarmWrite(UtilTimer, 1000000, true);
-  Serial.println("setupUtilTimer() ");
+  Serial.println("setupPreheatTimer() ");
 }
 
 
