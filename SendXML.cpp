@@ -71,7 +71,7 @@ void SendXML() {
   sprintf(buf, "<TIMEREM0>%s</TIMEREM0>\n", get_timer_string(TimerValue));
   strcat(XML, buf);
   // Timer start stop
-  if (TIMERSTART) {
+  if (rState->timerStart) {
     strcat(XML, "<TSTART>1</TSTART>\n");
  
   }
@@ -156,7 +156,7 @@ void SendXML() {
   strcat(XML, buf);
  
     // Timer start stop
-  if (PREHEAT_TIMERSTART) {
+  if (rState->preheatTimerStart) {
     strcat(XML, "<PTSTART>1</PTSTART>\n");
   }
   else {
@@ -164,7 +164,7 @@ void SendXML() {
   }
 //Serial.print("8 XML length");Serial.println(strlen(XML));
   // show mixer power enable led0 status
-  if (MIXPWR) {
+  if (rState->mixerpwr) {
     strcat(XML, "<MIX>1</MIX>\n");
   }
   else {
@@ -179,7 +179,7 @@ void SendXML() {
   }
   // send heater power enable status
   // False is ON for SSR
-  if (!HEATERPWR) {
+  if (!rState->heaterpwr) {
     strcat(XML, "<HEATER>1</HEATER>\n");
   }
   else {
@@ -187,7 +187,7 @@ void SendXML() {
   }
   //Serial.print("9 XML length");Serial.println(strlen(XML));
   // send roasting status
-  if (ROAST) {
+  if (rState->doRoast) {
     strcat(XML, "<ROASTING>1</ROASTING>\n");
   }
   else {
