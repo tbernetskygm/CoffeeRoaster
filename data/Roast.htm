@@ -148,7 +148,7 @@
   <br> 
   </main>
 <footer class="footer">
-    <p>Page Version:1.0  Date:Dec 10,2023</p>
+    <p>Page Version:1.1  Date:Aug 6,2024</p>
 </footer>
   <!-- Dialog box to select a file -->
   <dialog id="roastFileDialog">
@@ -749,7 +749,7 @@
   
 function UpdateHeatGunSetting(value){
 	var xhttp = new XMLHttpRequest;
-	timeoutValue = 100 ;
+	timeoutValue = 1000 ;
 	//xhttp.onreadystatechange = function() {
 	//	if (this.readyState == 4 && this.status ==200) {
 	//	document.getElementById("servocmd").innerHTML=this.responseText;
@@ -763,7 +763,7 @@ function UpdateHeatGunSetting(value){
     
 function UpdateTempSlider(value){
 	var xhttp = new XMLHttpRequest;
-	timeoutValue = 100 ;
+	timeoutValue = 1000 ;
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status ==200) {
 		//console.log("UpdateTempSlider response  = ", this.responseText);
