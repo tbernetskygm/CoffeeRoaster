@@ -147,6 +147,8 @@ extern char XML[2048];
 extern char buf[64];
 extern char buff[512];
 extern bool first;
+extern RoastState  R_State;
+extern RoastState * rState;
 void readThermocoupleTemps();
 
 #endif
