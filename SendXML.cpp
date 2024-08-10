@@ -38,6 +38,12 @@ void SendXML() {
   // Temp readout preference
   sprintf(buf, "<TEMP_PREF>%d</TEMP_PREF>\n", TempPref);
   strcat(XML, buf);
+  // Temp sensor select
+  sprintf(buf, "<TEMP_SENSOR>%d</TEMP_SENSOR>\n", tempSensorSelect);
+  strcat(XML, buf);
+  // Debug setting
+  sprintf(buf, "<DEBUG>%d</DEBUG>\n", DebugNum);
+  strcat(XML, buf);
 
   // Temp probe type
   sprintf(buf, "<TEMP_PROBE>%d</TEMP_PROBE>\n", TempSensorKOhms);
