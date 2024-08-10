@@ -647,7 +647,14 @@ void UpdateRoastingLog(void * rState) //bool roast, bool first , bool last, bool
         tempSamples=5;
         ClearUtilTimer();
 	if (state->doRoast && !state->timerStart)
+	{
+	  // Have to turn up the temp!!
+	  if (FinishServoPos < servoPos)
+	    servoPosNew= servoPos + 20; // incase final temp is set higher than config data
+	  else
+	    servoPosNew=FinishServoPos;
 	  ProcessButtonTimerStart();
+	}
         //SetMachineState();
       }
 
