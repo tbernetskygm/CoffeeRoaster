@@ -320,6 +320,9 @@ void ProcessPreheatTimerStart() {
   // if 1 start timer
   if (rState->preheatTimerStart)
   {
+    // If just doing preheat set up log
+    if (!rState->doRoast)
+	    SetupRoastingLog(true);
     //Set servo position
     PreheatServoPos=getServoPos(PreheatTemp);
     // get the timer start value
@@ -339,6 +342,9 @@ void ProcessPreheatTimerStart() {
       if (rState->heaterpwr)
 	ProcessButtonHeaterPwr();
 
+      // if not doing a full roast call ProcessButtonMixPwr() to start mixer
+      if (!rState->doRoast)
+        ProcessButtonMixPwr();
       // Position servo to proper temp
       servoPosNew=PreheatServoPos;
       PreheatTimerValue = PreheatTimerStartValue;
@@ -383,7 +389,7 @@ String SetRoastFilename()
   return fname;
 }
 
-void SetupRoastingLog()
+void SetupRoastingLog(bool onlyPreheat)
 {
   String fileName;
   //char buff[64]= {'\0'};
@@ -407,64 +413,70 @@ void SetupRoastingLog()
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //writeFile(fileName.c_str(), cdata_p);
+ 
   Serial.printf("SetupRoastingLog get_date buf length %d\n",strlen(buf));
   sprintf(buf, "\"%s\",\n",get_date_string().c_str());
   strcat(buff,buf);
-  //appendFile(fileName.c_str(), cdata_p);
+  
+  if (onlyPreheat)
+  {
+    sprintf(buf, "\t\"*** Preheat Only ***\",\n");
+    strcat(buff,buf);
+  }
+
   sprintf(buf, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
   strcat(buff,buf);
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
   sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   sprintf(buf, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
   strcat(buff,buf);
   Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog preheat time %d\n",PreheatTimerStartValue);
   sprintf(buf, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog preheat temp %d\n",PreheatTemp);
   sprintf(buf, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   sprintf(buf, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog Roast time %d\n",TimerStartValue);
   sprintf(buf, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog final temp\n");
   sprintf(buf, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   sprintf(buf, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
   sprintf(buf, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
-  //appendFile(fileName.c_str(), cdata_p);
+
   Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
   if (HEATGUNHIGH == 1)
   {
@@ -564,19 +576,31 @@ void SetMachineState()
 {
   if (rState->doRoast)
   {
-    // mixer power relay
-    if(rState->mixerpwr)
-      ProcessButtonMixPwr();
-    // heater power relay (inverted logic)
-    if(!rState->heaterpwr)
-      ProcessButtonHeaterPwr();
     rState->roast=!rState->roast;
-    CloseRoastingLog();
     rState->first=true;
     // set tempSamples back to 10
     tempSamples=10;
     rState->doRoast=false;
+    rState->last=false;
+    rState->fileName="";
   }
+  else if (!rState->doRoast && rState->preheat)
+  {
+    rState->preheat=false;
+    rState->first=true;
+    // set tempSamples back to 10
+    tempSamples=10;
+    rState->doRoast=false;
+    rState->last=false;
+    rState->fileName="";
+  }
+  // mixer power relay
+  if(rState->mixerpwr)
+    ProcessButtonMixPwr();
+  // heater power relay (inverted logic)
+  if(!rState->heaterpwr)
+    ProcessButtonHeaterPwr();
+  CloseRoastingLog();
   // Zero servo
   servoPosNew=0;
 }
@@ -734,8 +758,11 @@ void UpdateRoastingLog(void * rState) //bool roast, bool first , bool last, bool
         {
           Serial.printf("UpdateRoastingLog last preheat step roast %d endPreheat %d last %d\n",
 		       state->roast,endPreheat,state->last);
-	  state->preheat=false;
-	  state->last=false;
+	  if (state->doRoast)
+	  {
+	    state->preheat=false;
+	    state->last=false;
+	  }
           sprintf(buf, "\n\t],\n");
           strcat(buff,buf);
           WHENDEBUG(1)
@@ -765,6 +792,11 @@ void UpdateRoastingLog(void * rState) //bool roast, bool first , bool last, bool
 	if(state->doRoast && state->roast && state->last)
 	{
           Serial.printf("UpdateRoastingLog Should be done roasting!\n");
+	  SetMachineState();
+	}
+	else if(!state->doRoast && state->preheat && state->last)
+	{
+          Serial.printf("UpdateRoastingLog Should be done PREHEAT only!\n");
 	  SetMachineState();
 	}
       }
