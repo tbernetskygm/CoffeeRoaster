@@ -156,7 +156,7 @@ int getServoPos( int temp)
     if (temp2 > 0)
     {
       calcPos =((int)( pos1+(pos2-pos1)/(temp2-temp1)*(temp-temp1)));
-      Serial.print(" Calculated servo pos: ");Serial.println(calcPos);
+      Serial.print(" getServoPos: Calculated servo pos: ");Serial.println(calcPos);
     } else {
       calcPos =0;
       Serial.printf(" Cannot calculate servo pos temp value too high! %d\n",temp);
