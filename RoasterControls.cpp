@@ -28,12 +28,14 @@ void IRAM_ATTR onRoastTimer() {
 // start the roasting timer
 void ProcessButtonRoastStart() {
   ROAST = !ROAST;
-  Serial.printf("ProcessButtonRoastStart ROAST= %d MIXPWR %d HEATERPWR %d TIMERSTART %d PREHEAT_TIMERSTART %d\n",ROAST,MIXPWR,HEATERPWR,TIMERSTART,PREHEAT_TIMERSTART);
+  rState->doRoast=!rState->doRoast;
+  Serial.printf("ProcessButtonRoastStart doRoast %d ROAST= %d MIXPWR %d HEATERPWR %d TIMERSTART %d PREHEAT_TIMERSTART %d\n",
+		  rState->doRoast,rState->roast,rState->mixerpwr,rState->heaterpwr,rState->timerStart,rState->preheatTimerStart);
 
   // if config data not loaded,get it
   if (!CONFIG_DATA_LOADED)
     readConfigData();
-  if (ROAST)
+  if (rState->doRoast)
   {
     //Set servo positions
     PreheatServoPos=getServoPos(PreheatTemp);
@@ -43,7 +45,7 @@ void ProcessButtonRoastStart() {
     // start logging data
     SetupRoastingLog();
     // call ProcessButtonMixPwr() to start mixer
-    if (!MIXPWR)
+    if (!rState->mixerpwr)
       ProcessButtonMixPwr();
        // if the preheat timer value is set do the preheat first
     Serial.printf("ProcessButtonRoastStart PreheatTimerValue %d PreheatTimerStartValue %d\n ",
@@ -52,7 +54,7 @@ void ProcessButtonRoastStart() {
 	    PreheatTimerValue=PreheatTimerStartValue;
 
     // If there is a preheat timer value then start preheat
-    if (PreheatTimerValue > 0 && !PREHEAT_TIMERSTART )
+    if (PreheatTimerValue > 0 && !rState->preheatTimerStart )
       ProcessPreheatTimerStart();
     else {
      // No preheat just roast 
@@ -61,10 +63,11 @@ void ProcessButtonRoastStart() {
 	// set tempSamples to 5
         tempSamples=5;
       //don't forget to turn heater on!!
-      if (HEATERPWR)
+      //if (HEATERPWR)
+      if (rState->heaterpwr)
 	ProcessButtonHeaterPwr();
       // call ProcessButtonTimerStart() to start the timer
-      if (!TIMERSTART)
+      if (!rState->timerStart)
       {
         ProcessButtonTimerStart();
       }
@@ -74,20 +77,22 @@ void ProcessButtonRoastStart() {
   else //Stop
   {
     // call ProcessButtonMixPwr() to stop mixer 
-    if (MIXPWR)
+    //if (MIXPWR)
+    if (rState->mixerpwr)
       ProcessButtonMixPwr();
     // call ProcessButtonHeaterPwr() to turn off heater
-    if (!HEATERPWR)
+    //if (!HEATERPWR)
+    if (!rState->heaterpwr)
     {
       ProcessButtonHeaterPwr();
       // Reset servo position
       servoPosNew=0;
     }
     // If stop is pressed update log set last and stop to true.
-    UpdateRoastingLog(true,false,true,true);
+    //UpdateRoastingLog(true,false,true,true);
     Serial.printf("Stop after update roasting log\n");
     // call ProcessButtonTimerStart() to stop the timer
-    if (TIMERSTART)
+    if (rState->timerStart)
     {
       ProcessButtonTimerStart();
     }
@@ -223,8 +228,9 @@ void UpdateSlider() {
 
 void ProcessButtonMixPwr() {
   MIXPWR = !MIXPWR;
-  digitalWrite(PIN_MIX_POWER_ENABLE, MIXPWR);
-  Serial.print("Button 0 Mixer Power "); Serial.println(MIXPWR);
+  rState->mixerpwr = !rState->mixerpwr;
+  digitalWrite(PIN_MIX_POWER_ENABLE, rState->mixerpwr);
+  Serial.print("Button 0 Mixer Power "); Serial.println(rState->mixerpwr);
   Server.send(200, "text/plain", ""); //Send web page
 }
 
@@ -238,20 +244,23 @@ void ProcessButtonMixDir() {
 // If using SSR logic is reversed 1 turns off
 void ProcessButtonHeaterPwr() {
   HEATERPWR = !HEATERPWR;
-  digitalWrite(PIN_HEATER_POWER_ENABLE, HEATERPWR);
-  if ( !HEATERPWR) {
-   Serial.print("Button 0 Heater Power is ON "); Serial.println(HEATERPWR);
+  rState->heaterpwr = !rState->heaterpwr;
+  digitalWrite(PIN_HEATER_POWER_ENABLE, rState->heaterpwr);
+  //if ( !HEATERPWR) {
+  if (!rState->heaterpwr)
+  {
+   Serial.print("Button 0 Heater Power is ON "); Serial.println(rState->heaterpwr);
   } else {
-   Serial.print("Button 0 Heater Power is OFF "); Serial.println(HEATERPWR);
+   Serial.print("Button 0 Heater Power is OFF "); Serial.println(rState->heaterpwr);
   }
   Server.send(200, "text/plain", ""); //Send web page
 }
 
 void ProcessButtonTimerStart() {
-  TIMERSTART = !TIMERSTART;
+  rState->timerStart = !rState->timerStart;
   //digitalWrite(PIN_RELAY_MIXER_DIR, MIXDIR);
   // if 1 start timer
-  if (TIMERSTART)
+  if (rState->timerStart)
   {
     SetupRoastTimer();
     // get the timer start value
@@ -265,7 +274,8 @@ void ProcessButtonTimerStart() {
       FinishServoPos=160;
     tempTotalF=0;
     tempTotalC=0;
-    first=true;
+    rState->first=true;
+    rState->roast=true;
     Serial.printf("Button Timer Start Roast TimerValue %d \n",TimerValue);
     timerStart(RoastTimer);
   }
@@ -276,8 +286,9 @@ void ProcessButtonTimerStart() {
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     TimerValue = TimerStartValue;
     ClearRoastTimer();
-    first=true;
-    Serial.printf("Button Timer  Stop timer %d\n",TIMERSTART);
+    rState->first=true;
+    rState->roast=false;
+    Serial.printf("Button Timer  Stop timer %d\n",rState->timerStart);
   }
   
   Server.send(200, "text/plain", ""); //Send web page
@@ -303,10 +314,11 @@ void ProcessButtonTimerSub() {
 
 void ProcessPreheatTimerStart() {
   PREHEAT_TIMERSTART = !PREHEAT_TIMERSTART;
-  Serial.printf("ProcessPreheatTimerStart  %d\n",PREHEAT_TIMERSTART);
+  rState->preheatTimerStart=!rState->preheatTimerStart;
+  Serial.printf("ProcessPreheatTimerStart  %d\n",rState->preheatTimerStart);
   //digitalWrite(PIN_RELAY_MIXER_DIR, MIXDIR);
   // if 1 start timer
-  if (PREHEAT_TIMERSTART)
+  if (rState->preheatTimerStart)
   {
     //Set servo position
     PreheatServoPos=getServoPos(PreheatTemp);
@@ -323,8 +335,8 @@ void ProcessPreheatTimerStart() {
     if (PreheatTimerStartValue > 0)
     {
       SetupPreheatTimer();
-      PREHEAT=true;
-      if (HEATERPWR)
+      rState->preheat=true;
+      if (rState->heaterpwr)
 	ProcessButtonHeaterPwr();
 
       // Position servo to proper temp
@@ -335,8 +347,8 @@ void ProcessPreheatTimerStart() {
       timerStart(UtilTimer);
     } else {
       Serial.print("ProcessPreheatTimerStart Preheat Timer Not SET!: "); Serial.println(PreheatTimerStartValue);
-      PREHEAT_TIMERSTART=false;
-      PREHEAT=false;
+      rState->preheatTimerStart=false;
+      rState->preheat=false;
       Server.send(200, "text/plain", "Timer Not Set"); //Send web page
     }
   }
@@ -346,14 +358,15 @@ void ProcessPreheatTimerStart() {
     PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
     PreheatTimerValue = PreheatTimerStartValue;
     // if not roasting turn heater off and reset servo position
-    if( !ROAST)
+    if( !rState->doRoast)
     {
-      if (!HEATERPWR) // if heater is on turn it off
-      ProcessButtonHeaterPwr();
+      //if (!HEATERPWR) // if heater is on turn it off
+      if (!rState->heaterpwr)
+        ProcessButtonHeaterPwr();
       servoPosNew=0;
     }
     ClearUtilTimer();
-    Serial.print("ProcessPreheatTimerStart Preheat Timer Button  Stop timer"); Serial.println(PREHEAT_TIMERSTART);
+    Serial.print("ProcessPreheatTimerStart Preheat Timer Button  Stop timer"); Serial.println(rState->preheatTimerStart);
   }
   
   Server.send(200, "text/plain", ""); //Send web page
@@ -376,6 +389,7 @@ void SetupRoastingLog()
   //char buff[64]= {'\0'};
   char * cdata_p=&buff[0];
   RoastLogFile=SetRoastFilename();
+  rState->fileName=RoastLogFile;
   fileName=RoastLogFile;
   String tempType;
   if (TempPref)
@@ -544,133 +558,218 @@ void readConfigData()
   }
 }
 
+// This will control all the relays etc
+// using rState stucture
+void SetMachineState()
+{
+  if (rState->doRoast)
+  {
+    // mixer power relay
+    if(rState->mixerpwr)
+      ProcessButtonMixPwr();
+    // heater power relay (inverted logic)
+    if(!rState->heaterpwr)
+      ProcessButtonHeaterPwr();
+    rState->roast=!rState->roast;
+    CloseRoastingLog();
+    rState->first=true;
+    // set tempSamples back to 10
+    tempSamples=10;
+    rState->doRoast=false;
+  }
+  // Zero servo
+  servoPosNew=0;
+}
+
 // Preheat
 // Call with roast = false first=true for first pass 
-void UpdateRoastingLog(bool roast, bool first , bool last, bool stop)
+void UpdateRoastingLog(void * rState) //bool roast, bool first , bool last, bool stop)
 {
-	// I changed this so I could do roast without preheating
-	// but it broke the logging stuff Didn't put in the 
-	// "preheat_steps":[  or "roast_steps":[ t
+  RoastState * state = (RoastState *)rState;
+  // I changed this so I could do roast without preheating
+  // but it broke the logging stuff Didn't put in the 
+  // "preheat_steps":[  or "roast_steps":[ t
   String fileName;
-  char buff[256]= {'\0'};
+  //char buff[256]= {'\0'};
   char * cdata_p=&buff[0];
   static bool endPreheat=false;
   int buflen=0;
-  fileName=RoastLogFile;
-  
-  Serial.printf("---UpdateRoastingLog file roast %d first %d endPreheat %d last %d stop %d\n",roast,first,endPreheat,last,stop);
+  while (1)
+  {
+    if(xSemaphoreTake(roastTimerSemaphore, 0) == pdTRUE)
+    {
+      Serial.printf("---UpdateRoastingLog Semaphore taken\n");
+      Serial.printf("---UpdateRoastingLog file: %s doRoast %d roast %d first %d last %d preheat %d stop %d TimerValue %d PreheatTimerValue %d tempSamples %d\n",
+		    state->fileName.c_str(),state->doRoast,state->roast,state->first,
+		    state->last,state->preheat,state->stopit,TimerValue,PreheatTimerValue,tempSamples);
+      fileName=state->fileName;//RoastLogFile;
+      // things to do when timer finishes if not in preheat mode
+      if(state->roast && TimerValue <=0)
+      {
+        Serial.printf("UpdateRoastingLog STOPPING ROAST time : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
+        state->last=true;
+        state->timerStart=false;
+        tempSamples=10;
+        ClearRoastTimer();
+        //SetMachineState();
+      }
+      // Transition between preheat and roast
+      //
+      if(state->preheat && PreheatTimerValue <=0)
+      {
+        Serial.printf("UpdateRoastingLog Preheat done preheat time : %d Servo Pos %d FinishServoPos : %d\n",PreheatTimerValue,servoPos,FinishServoPos);
+        state->last=true;
+        state->preheatTimerStart=false;
+        tempSamples=5;
+        ClearUtilTimer();
+	if (state->doRoast && !state->timerStart)
+	  ProcessButtonTimerStart();
+        //SetMachineState();
+      }
 
-  // If not roast and first is true then set end preheat to false so preheat entries get added
- // if (!roast && first)
- //   endPreheat=false;
+      if (TimerValue%tempSamples==0 && state->roast) // dont do update if roast was stopped
+      {
+        sprintf(buff, "\0");
+	if (state->roast)
+	  Serial.printf(" UpdateRoastingLog time  : %d ROASTing: %d preheat %d \n",TimerValue,state->roast, state->preheat);
+      }
+
+      if (PreheatTimerValue%tempSamples==0 && state->preheat) // dont do update if roast was stopped
+      {
+        sprintf(buff, "\0");
+	if (state->preheat)
+	  Serial.printf(" UpdateRoastingLog time  : %d PREHEATing: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
+      }
+
+      if ((TimerValue%tempSamples==0 && state->roast)|| (PreheatTimerValue%tempSamples == 0 && state->preheat)) // dont do update if roast was stopped
+      {
+	if (state->roast)
+	  Serial.printf(" UpdateRoastingLog time  : %d ROAST: %d preheat %d \n",TimerValue,state->roast, state->preheat);
+	if (state->preheat)
+	  Serial.printf(" UpdateRoastingLog time  : %d PREHEAT: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
+  
+        sprintf(buff, "\0");
+        if (state->preheat)//PREHEAT)
+        {
+          Serial.printf("Preheat steps\n");
+          // This starts the preheat_steps array
+          if(!state->roast && state->first){
+	    state->first=false;
+            sprintf(buf, "\t\"preheat_steps\": [\n");
+            strcat(buff,buf);
+            WHENDEBUG(5)
+              Serial.printf("** buff size %d\n",strlen(buff));
+            Serial.printf("** First Preheat step *** buf size %d\n",strlen(buff));
+            buflen+=strlen(buff);
+          }
+          sprintf(buf, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
+          strcat(buff,buf);
+          WHENDEBUG(5)
+            Serial.printf("** buff size %d\n",strlen(buff));
+          buflen+=strlen(buf);
+        } 
+        else if (state->roast)//ROAST) 
+        {
+          // This closes the preheat_steps array and starts the roast_steps array	  
+          if (state->roast && state->first )
+          {
+	    state->first=false;
+            Serial.printf("** First Roast step ***\n");
+            sprintf(buf, "\n\t\"roast_steps\": [\n");
+            strcat(buff,buf);
+            WHENDEBUG(5)
+              Serial.printf("** buff size %d\n",strlen(buff));
+          }
+          sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+          strcat(buff,buf);
+          WHENDEBUG(5)
+            Serial.printf("** buff size %d\n",strlen(buff));
+        }
+        else if (state->stopit)
+        {
+          // If stopped in the middle add one more of these to 
+          // make json file valid 
+          sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+          strcat(buff,buf);
+          WHENDEBUG(5)
+            Serial.printf("** buff size %d\n",strlen(buff));
+        }
+        // this gets added to each entry
+        sprintf(buf, "\t\t\"TMPF\": %.2f,\n", tempF);
+        strcat(buff,buf);
+        WHENDEBUG(5)
+          Serial.printf("** buff size %d\n",strlen(buff));
+        buflen+=strlen(buf);
    
-  if (PREHEAT)
-  {
-    Serial.printf("Preheat steps\n");
-    // This starts the preheat_steps array
-    if(!roast && first){
-      sprintf(buff, "\t\"preheat_steps\": [\n");
-      Serial.printf("** First Preheat step *** buf size %d\n",strlen(buff));
-      buflen+=strlen(buff);
-      //appendFile(fileName.c_str(), cdata_p);
-    }
-    sprintf(buf, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
-      Serial.printf("** buf size %d\n",strlen(buf));
-      buflen+=strlen(buf);
-    //if (strlen(buff) > 0)
-    //{
-      strcat(buff,buf);
-    //}	    
-    //appendFile(fileName.c_str(), cdata_p);
-  } 
-  else if (ROAST) 
-  {
-    // This closes the preheat_steps array and starts the roast_steps array	  
-    //if (roast && !endPreheat && first ){
-    if (roast && first ){
-	  Serial.printf("** First Roast step ***\n");
-      //sprintf(buff, "\n\t],\n");
-      //appendFile(SPIFFS,fileName.c_str(), cdata_p);
-      sprintf(buf, "\n\t\"roast_steps\": [\n");
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      //appendFile(fileName.c_str(), cdata_p);
-      //endPreheat=true;
-    }
-   // else if (!endPreheat && first ){
-//	  Serial.printf("** >>>> First Preheat step ***\n");
-//      sprintf(buff, "\t\"preheat_steps\": [\n\t{\n");
-//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-//      sprintf(buff, "}\n\t],\n");
-//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-//      sprintf(buff, "\n\t\"roast_steps\": [\n");
-//      appendFile(SPIFFS,fileName.c_str(), cdata_p);
-//      endPreheat=true;
-//    }
-     sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
-  }
-  else if (stop) {
-	  // If stopped in the middle add one more of these to 
-	  // make json file valid 
-    sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
-  }
-  // this gets added to each entry
-    sprintf(buf, "\t\t\"TMPF\": %.2f,\n", tempF);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      buflen+=strlen(buf);
-    //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\t\t\"TMPC\": %.2f,\n", tempC);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      buflen+=strlen(buf);
-    //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\t\t\"POS\": %d\n", servoPos);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      buflen+=strlen(buf);
-    //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\t}");
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
-      buflen+=strlen(buf);
-    //appendFile(fileName.c_str(), cdata_p);
-    // put in a comma before next entry 
-    if ( !last )
-    {
-      Serial.printf("UpdateRoastingLog adding comma file first %d endPreheat %d last %d\n",first,endPreheat,last);
-      //sprintf(buff, ", first %d last %d\n", first , last);
-      sprintf(buf, ",\n");
-      strcat(buff,buf);
-      buflen+=strlen(buf);
-      //appendFile(fileName.c_str(), cdata_p);
-    }
-    else if (!roast && last)
-    {
-      Serial.printf("UpdateRoastingLog last preheat step roast %d endPreheat %d last %d\n",roast,endPreheat,last);
-      sprintf(buf, "\n\t],\n");
-      strcat(buff,buf);
-      buflen+=strlen(buf);
-      //appendFile(fileName.c_str(), cdata_p);
-
-    } else {
-      Serial.printf("UpdateRoastingLog adding newline only file first %d endPreheat %d last %d\n",first,endPreheat,last);
-      //sprintf(buff, " first %d last %d\n", first,last);
-      sprintf(buf, "\n");
-      strcat(buff,buf);
-      buflen+=strlen(buf);
-      //appendFile(fileName.c_str(), cdata_p);
-  }
+        sprintf(buf, "\t\t\"TMPC\": %.2f,\n", tempC);
+        strcat(buff,buf);
+        WHENDEBUG(5)
+          Serial.printf("** buff size %d\n",strlen(buff));
+        buflen+=strlen(buf);
+   
+        sprintf(buf, "\t\t\"POS\": %d\n", servoPos);
+        strcat(buff,buf);
+        WHENDEBUG(5)
+          Serial.printf("** buff size %d\n",strlen(buff));
+        buflen+=strlen(buf);
+   
+        sprintf(buf, "\t}");
+        strcat(buff,buf);
+        WHENDEBUG(5)
+          Serial.printf("** buff size %d\n",strlen(buff));
+        buflen+=strlen(buf);
   
-  appendFile(fileName.c_str(), cdata_p);
-  Serial.printf("UpdateRoastingLog total buffer length %d\n",buflen);
-	
+        // put in a comma before next entry 
+        if ( !state->last )
+        {
+          Serial.printf("UpdateRoastingLog adding comma file first %d endPreheat %d last %d\n",
+		      state->first,endPreheat,state->last);
+          sprintf(buf, ",\n");
+          strcat(buff,buf);
+          buflen+=strlen(buf);
+          WHENDEBUG(1)
+            Serial.printf("** buff size %d\n",strlen(buff));
+        }
+        else if (state->preheat && state->last)
+        {
+          Serial.printf("UpdateRoastingLog last preheat step roast %d endPreheat %d last %d\n",
+		       state->roast,endPreheat,state->last);
+	  state->preheat=false;
+	  state->last=false;
+          sprintf(buf, "\n\t],\n");
+          strcat(buff,buf);
+          WHENDEBUG(1)
+            Serial.printf("** buff size %d\n",strlen(buff));
+          buflen+=strlen(buf);
+
+        } 
+        else 
+        {
+          Serial.printf("UpdateRoastingLog adding newline only file first %d endPreheat %d last %d\n",
+		       state->first,endPreheat,state->last);
+          //sprintf(buff, " first %d last %d\n", state->first,state->last);
+          sprintf(buf, "\n");
+          strcat(buff,buf);
+          WHENDEBUG(1)
+            Serial.printf("** buff size %d\n",strlen(buff));
+          buflen+=strlen(buf);
+        }
+  
+        Serial.printf("UpdateRoastingLog total buffer length %d\n",buflen);
+        WHENDEBUG(1)
+          Serial.printf("** buff size %d\n",strlen(buff));
+	buflen=0;
+        if (state->fileName.length() > 0)
+          appendFile(fileName.c_str(), cdata_p);
+	// Turn off stuff when done
+	if(state->doRoast && state->roast && state->last)
+	{
+          Serial.printf("UpdateRoastingLog Should be done roasting!\n");
+	  SetMachineState();
+	}
+      }
+    }
+  }
 }
 
 void SetupRoastTimer()
