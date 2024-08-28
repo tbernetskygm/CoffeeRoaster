@@ -145,6 +145,7 @@ int FanRPM = 0;
 int timeoutVal = 500;// 500 msec
 int TimerMin0 = 1;
 int TimerMin0New = 0;
+int TimerAdjustMin = 0;
 int TimerSec0 = 1;
 int TimerSec0New = 0;
 int TimerStartValue = 0;

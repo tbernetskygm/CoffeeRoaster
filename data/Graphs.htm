@@ -289,7 +289,7 @@ function parseRoastLog(arr,arr1) {
     var x;
     var p;
     var type;
-    var addTime = arr["Roasting time adjusted during roast by (min)"];
+    var addTime = arr["Roast time adjustment"];
     var preheat=arr["preheat_steps"];
     var roast=arr["roast_steps"];
     var configDate=arr["Roasting Log Date"];
@@ -343,6 +343,7 @@ function parseRoastLog(arr,arr1) {
     }
     
     if (typeof roast !== 'undefined') {
+      addTime = arr["Roast time adjustment"];
       var MaxTime
       if (typeof addTime !== 'undefined') {
       // First roast step is at 5 seconds so have to add it to get true Max Time

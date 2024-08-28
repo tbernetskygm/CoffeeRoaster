@@ -100,6 +100,7 @@ void ProcessButtonRoastStart() {
     // reset variables
     TimerAdjust=false;
     TimerMin0New =0;
+    TimerAdjustMin =0;
   }
 }
 
@@ -298,6 +299,7 @@ void ProcessButtonTimerStart() {
 void ProcessButtonTimerAdd() {
   TimerValue = TimerValue + 60;
   TimerMin0New +=1;
+  TimerAdjustMin +=1;
   TimerAdjust = true;
   Server.send(200, "text/plain", ""); //Send web page
 }
@@ -306,6 +308,7 @@ void ProcessButtonTimerAdd() {
 void ProcessButtonTimerSub() {
   TimerValue = TimerValue - 60;
   TimerMin0New -=1;
+  TimerAdjustMin -=1;
   if (TimerValue < 0)
 	  TimerValue=0;
   TimerAdjust = true;
@@ -517,7 +520,7 @@ void CloseRoastingLog(bool manualStop)
     //Serial.printf("** buff size %d\n",strlen(buff));
     if (TimerAdjust)
     {
-      sprintf(buf, ",\n\t\"Roasting time adjusted during roast by (min)\": %d\n",TimerMin0New);
+      sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
       strcat(buff,buf);
       //Serial.printf("** buff size %d\n",strlen(buff));
     }
@@ -535,7 +538,7 @@ void CloseRoastingLog(bool manualStop)
     Serial.printf("** buff size %d\n",strlen(buff));
     if (TimerAdjust)
     {
-      sprintf(buf, ",\n\t\"Roasting time was adjusted during roast by (min)\": %d\n",TimerMin0New);
+      sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
       strcat(buff,buf);
       Serial.printf("** buff size %d\n",strlen(buff));
     }

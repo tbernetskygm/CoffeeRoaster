@@ -84,6 +84,7 @@ extern int FanRPM;
 extern int timeoutVal;
 extern int TimerMin0 ;
 extern int TimerMin0New ;
+extern int TimerAdjustMin ;
 extern int TimerSec0 ;
 extern int TimerSec0New ;
 extern int TimerStartValue;
