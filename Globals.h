@@ -26,6 +26,9 @@ extern WebServer Server;
 #ifndef BUILTIN_LED
 //#define BUILTIN_LED  2  // backward compatibility
 #endif
+#ifdef THERMOCOUPLE
+#include "max6675.h"
+#endif
 
 extern int Release;
 extern int Version;
@@ -47,9 +50,9 @@ extern int tempSensorSelect;
 extern float setTemp;
 extern int SERVO_MAX_STEPS;
 #endif
-//#ifdef THERMOCOUPLE
-//extern MAX6675 thermocouple(PIN_THERMO_CLK,PIN_THERMO_CS,PIN_THERMO_DO);
-//#endif
+#ifdef THERMOCOUPLE
+extern MAX6675 thermocouple;//(PIN_THERMO_CLK,PIN_THERMO_CS,PIN_THERMO_DO);
+#endif
 extern double tempC;
 extern double tempF;
 extern double tempTotalC;
@@ -151,6 +154,5 @@ extern char buff[512];
 extern bool first;
 extern RoastState  R_State;
 extern RoastState * rState;
-void readThermocoupleTemps();
 
 #endif
