@@ -12,3 +12,8 @@ int getServoPos( int temp);
 float getTempVal( int pos);
 int adjustTemp(int setPoint);
 double readTemp(bool F);
+
+void readThermocoupleTemps();
+
+void readThermistorTemps();
+void HandleDevices(void * dbg);

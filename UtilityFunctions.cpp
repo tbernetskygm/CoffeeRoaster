@@ -342,3 +342,63 @@ int adjustTemp(int setPoint)
   tempTotalC=0;
   return newPos;
 }
+
+void readThermocoupleTemps()
+{
+  tempC=thermocouple.readCelsius();
+  tempF=thermocouple.readFahrenheit();
+}
+
+void readThermistorTemps()
+{
+  tempC=readTemp(false);
+  tempF=readTemp(true);
+}
+
+// this is a task to read temps
+// and move the Servo
+void HandleDevices(void *)
+{
+  static bool servoMoving = false;
+  for(;;)// infinite loop
+  {
+    //read temps
+    WHENDEBUG(4)
+      Serial.printf("HandleDevices Read Temps\n");
+    if (tempSensorSelect == 0)
+      readThermocoupleTemps();
+    else
+      readThermistorTemps();
+
+#ifdef Tempservo
+    // init servoPos =0 servoPosNew 0 
+       
+    if ( servoPos != servoPosNew)
+    {
+      servoMoving=true;
+      //Serial.print("Loop servoPosNew "); Serial.println(servoPosNew);
+      //Serial.print("Loop servoPos "); Serial.println(servoPos);
+      // rotate the servo
+      if ( servoPosNew >= SERVO_MAX_STEPS)
+        servoPosNew=SERVO_MAX_STEPS;
+      
+      TempServo.write(servoPosNew);
+      vTaskDelay(25/ portTICK_PERIOD_MS);
+      servoPos=TempServo.read();
+      // sometimes the position read does not match the position sent
+      // this hack makes up for it???
+      int posDiff=servoPosNew-servoPos;
+      if (posDiff == 1)
+        servoPos=servoPosNew;
+      //Serial.print("Loop Servo Attached = " );Serial.println(TempServo.attached());
+      //Serial.print("Loop Servo read = " );Serial.println(servoPos);
+    } else {
+      // Servo has moved to position
+      servoMoving=false;
+    }
+#endif
+    // wait for a second
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
+}
+
