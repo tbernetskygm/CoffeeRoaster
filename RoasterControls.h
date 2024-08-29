@@ -22,7 +22,7 @@ void ProcessStartPreHeat();
 void readConfigData();
 String SetRoastFilename();
 void SetupRoastingLog(bool onlyPreheat=false);
-void UpdateRoastingLog(void *);
+void UpdateRoastState(void *);
 void CloseRoastingLog(bool manualStop=false);
 void SetupRoastTimer();
 void ClearRoastTimer();
