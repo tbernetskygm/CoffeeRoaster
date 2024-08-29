@@ -255,18 +255,6 @@ bool atDetect(IPAddress& softapIP) {
   return true;
 }
 
-void readThermocoupleTemps()
-{
-  tempC=thermocouple.readCelsius();
-  tempF=thermocouple.readFahrenheit();
-}
-
-void readThermistorTemps()
-{
-  tempC=readTemp(false);
-  tempF=readTemp(true);
-}
-
 void printLocalTime()
 {
   struct tm timeinfo;
@@ -404,7 +392,8 @@ void setup() {
   rState->preheatTimerStart=false;
   rState->fileName="";
   // setup task to update roast stuff
-  xTaskCreate(UpdateRoastingLog,"Update Roast Log",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
+  xTaskCreate(UpdateRoastState,"Update Roast State",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
+  xTaskCreate(HandleDevices,"Handle Temps and Servo Moving",1000,(void*)DebugNum,1,NULL);
 
   Server.on("/", handleNewRoot);
   Server.on("/Roast", handleNewRoot);
@@ -536,7 +525,6 @@ void setup() {
 
 void loop() {
   //Serial.println("This is loop()");
-  static bool servoMoving = false;
   Server.handleClient();
   Portal.handleRequest();   // Need to handle AutoConnect menu.
   if (WiFi.status() == WL_IDLE_STATUS) {
@@ -550,7 +538,7 @@ void loop() {
     Serial.println("Wifi Idle restarting");
     delay(500);
   }
-
+/*
 #ifdef Tempservo
  // init servoPos =0 servoPosNew 0 
   if ( servoPos != servoPosNew)
@@ -577,7 +565,7 @@ void loop() {
     servoMoving=false;
   }
 #endif
-
+*/
   // check for utilTimerSemaphore
   if (xSemaphoreTake(utilTimerSemaphore, 0) == pdTRUE){
     //Serial.print("utilTimerSemaphore tempXML length :");Serial.println(strlen(tempXML));
@@ -599,10 +587,10 @@ void loop() {
     }
 #endif
   }
-  if (tempSensorSelect == 0)
-    readThermocoupleTemps();
-  else
-    readThermistorTemps();
+//  if (tempSensorSelect == 0)
+//    readThermocoupleTemps();
+//  else
+//    readThermistorTemps();
   //Serial.print("C = "); 
   //Serial.println(thermocouple.readCelsius());
   delay(500);
