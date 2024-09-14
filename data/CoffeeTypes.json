@@ -49,6 +49,13 @@
         "Vendor": "Burman Coffee Traders",
         "Roasting Notes": "Medium to Dark",
         "Tasting Notes": "Sweet, Malty"
+    },
+    {
+         "Variety":"Mexican Terruno",
+        "Source":"Nayarita Cuaranteno",
+        "Vendor": "Burman Coffee Traders",
+        "Roasting Notes": "Light to Dark",
+        "Tasting Notes": "Sweet Floral, Nutty, Caramel,Lemon"
     }
     ]
 }
