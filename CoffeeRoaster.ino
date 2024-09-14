@@ -393,7 +393,7 @@ void setup() {
   rState->fileName="";
   // setup task to update roast stuff
   xTaskCreate(UpdateRoastState,"Update Roast State",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
-  xTaskCreate(HandleDevices,"Handle Temps and Servo Moving",1000,(void*)DebugNum,1,NULL);
+  xTaskCreate(HandleDevices,"Handle Temps and Servo Moving",2000,(void*)DebugNum,1,NULL);
 
   Server.on("/", handleNewRoot);
   Server.on("/Roast", handleNewRoot);
