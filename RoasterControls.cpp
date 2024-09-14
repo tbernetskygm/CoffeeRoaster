@@ -430,7 +430,7 @@ void SetupRoastingLog(bool onlyPreheat)
   strcat(buff,buf);
 
   Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
-  sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType);
+  sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType.c_str());
   strcat(buff,buf);
   WHENDEBUG(5)
     Serial.printf("** buff size %d\n",strlen(buff));
@@ -699,7 +699,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
             Serial.printf("Preheat steps\n");
           // This starts the preheat_steps array
           if(!state->roast && state->first){
-	    state->first=false;
+	          state->first=false;
             sprintf(buf, "\t\"preheat_steps\": [\n");
             strcat(buff,buf);
             WHENDEBUG(5)
@@ -712,13 +712,17 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
           WHENDEBUG(5)
             Serial.printf("** buff size %d\n",strlen(buff));
           buflen+=strlen(buf);
+          // this gets added to each entry
+
+          sprintf(buf, "\t\t\"SETTMP\": %d,\n", PreheatTemp);
+          strcat(buff,buf);
         } 
         else if (state->roast)//ROAST) 
         {
           // This closes the preheat_steps array and starts the roast_steps array	  
           if (state->roast && state->first )
           {
-	    state->first=false;
+	          state->first=false;
             WHENDEBUG(1)
               Serial.printf("** First Roast step ***\n");
             sprintf(buf, "\n\t\"roast_steps\": [\n");
@@ -727,6 +731,9 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
               Serial.printf("** buff size %d\n",strlen(buff));
           }
           sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+          strcat(buff,buf);
+          // this gets added to each entry
+          sprintf(buf, "\t\t\"SETTMP\": %d,\n", FinishTemp);
           strcat(buff,buf);
           WHENDEBUG(5)
             Serial.printf("** buff size %d\n",strlen(buff));
@@ -737,6 +744,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
           // make json file valid 
           sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
           strcat(buff,buf);
+
           WHENDEBUG(5)
             Serial.printf("** buff size %d\n",strlen(buff));
         }

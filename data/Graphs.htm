@@ -287,6 +287,7 @@ function parseRoastLog(arr,arr1) {
     var i;
     var y;
     var x;
+    var yt;
     var p;
     var type;
     var addTime = arr["Roast time adjustment"];
@@ -294,7 +295,8 @@ function parseRoastLog(arr,arr1) {
     var roast=arr["roast_steps"];
     var configDate=arr["Roasting Log Date"];
     var seriesX=chartR.series[0].select();
-    if (chartR.series.length === 2) {
+    var setTemp;
+    if (chartR.series.length === 3) {
       chartR.destroy();
       chartR=newRoastChart();
     }
@@ -323,6 +325,10 @@ function parseRoastLog(arr,arr1) {
     if (chartR.series.length === 1) {
       chartR.addSeries({name: 'Servo Position',data:[] , color: '#ff00ff' });
     }
+
+    if (chartR.series.length === 2) {
+      chartR.addSeries({name: 'Requested Temp',data:[] , color: '#00ffff' });
+    }
     
     if (typeof preheat !== 'undefined' ) {
      for(i = 0; i < preheat.length; i++) {
@@ -334,10 +340,14 @@ function parseRoastLog(arr,arr1) {
         else {
            x = -parseInt(preheat[i].PREHEAT_TIME), y = parseFloat(preheat[i].TMPF);
         }
+
         chartR.series[0].addPoint([x, y], false, false, true);
         // try to add position series??
         p = parseInt(preheat[i].POS);
         chartR.series[1].addPoint([x, p], false, false, true);
+        yt=parseFloat(preheat[i].SETTMP);
+        if (typeof yt !== 'undefined')
+          chartR.series[2].addPoint([x, yt], false, false, true);
        
      }
     }
@@ -375,6 +385,9 @@ function parseRoastLog(arr,arr1) {
         // try to add position series??
         p = parseInt(roast[i].POS);
         chartR.series[1].addPoint([x, p], false, false, true);
+        yt=parseFloat(roast[i].SETTMP);
+        if (typeof yt !== 'undefined')
+          chartR.series[2].addPoint([x, yt], false, false, true);
       }
        
     }
