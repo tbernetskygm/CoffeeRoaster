@@ -1,4 +1,4 @@
-                                                            <!DOCTYPE html lang="en" class="js-focus-visible">
+ <!DOCTYPE html lang="en" class="js-focus-visible">
  <html>
   </head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,8 +8,9 @@
 
   <!--<body onpageshow="initData()">-->
 <header>
- <div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menuConnect Menu" alt="AutoConnect menu"/></a></div>
-
+ <!--
+<div class="menu"><a href="/_ac"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYBAMAAAASWSDLAAAALVBMVEUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////BHg4sAAAADXRSTlMACA8YREhJg5mnu8rdcKICYgAAAAFiS0dEDm+9ME8AAABFSURBVBjTY2AgDjBWdEBBuwADy104cGBgQ3ASGJj3nIGC0wZEmszANGsVFKxUYGBFmBaAykFRRiRAcQ6KQ1G8gOI54gAAQlFeCYGJCTQAAAAASUVORK5CYII=" border="0" title="AutoConnect menuConnect Menu" alt="AutoConnect menu"/></a></div>
+ -->
   <div class="container">
    
     <div class="navtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
@@ -148,7 +149,7 @@
   <br> 
   </main>
 <footer class="footer">
-    <p>Page Version:1.1  Date:Aug 6,2024</p>
+    <p>Page Version:1.2  Date:Oct 18,2025</p>
 </footer>
   <!-- Dialog box to select a file -->
   <dialog id="roastFileDialog">
@@ -450,6 +451,18 @@
                 document.getElementById("servopos").innerHTML=message;
   
             }
+                
+            xmldoc = xmlResponse.getElementsByTagName("BEAN_QTY");
+            if(xmldoc.length >0 ) //Check for valid response
+            {
+               message = xmldoc[0].firstChild.nodeValue;
+               tElement = document.getElementById("bean_qty");
+               if (document.activeElement != tElement)
+               {
+                 document.getElementById("bean_qty").value = message;
+	       }
+                    
+            }  
 
 
             xmldoc = xmlResponse.getElementsByTagName("Set_Temp");
@@ -685,7 +698,7 @@
     var elem;
     // set up to request the file 
     SendString = SendString+"?VALUE="+data;
-    xhttp.open("PUT",SendString,true);
+    xhttp.open("GET",SendString,true);
     xhttp.send();
     xhttp.onload = function() {
       if (xhttp.status != 200 ) {
@@ -739,7 +752,7 @@
                 
 		}
         }
-		xhttp.open("PUT",returnString+data,true);
+		xhttp.open("POST",returnString+data,true);
 		xhttp.send();
 	}
        
@@ -784,7 +797,7 @@ function UpdateTempSlider(value){
 	if (sendstr == "TEMP_CONFIG_REQ") {
         xhttp.open("GET",sendstr,true);
 	} else if (sendstr == "BUTTON_ROAST_START") {
-	   xhttp.open("PUT",sendstr,true);
+	   xhttp.open("POST",sendstr,true);
 	   if (Roasting == 1) {
 	      // Confirm you want to stop Yes should send button
 	      // No should skip
@@ -801,7 +814,7 @@ function UpdateTempSlider(value){
       }
       return;
 	} else {
-		xhttp.open("PUT",sendstr,true);
+		xhttp.open("POST",sendstr,true);
     }
 	xhttp.send();
 	xhttp.onload = function() {
@@ -828,7 +841,7 @@ function SecondsToMinutes(secs) {
 function process(){
     //console.log("Roast process()");
     if(xmlHttp.readyState==0 || xmlHttp.readyState == 4){
-        xmlHttp.open("PUT","xml",true);
+        xmlHttp.open("GET","xmlUpdate",true);
         xmlHttp.onreadystatechange=response;
         xmlHttp.send(null);
     }
@@ -868,7 +881,7 @@ function selectCoffeeFunction(num) {
       }
     }
   }
-  xhttp.open("PUT",returnString,true);
+  xhttp.open("POST",returnString,true);
   xhttp.send();
 }
 

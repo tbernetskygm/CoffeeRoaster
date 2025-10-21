@@ -8,11 +8,13 @@
 #define GRAPH_PAGE
 #define Tempservo
 #define THERMOCOUPLE
-#define OTA_T
+//#define OTA_T
 #define _RELEASE 2
 #define _VERSION 0
 #define _REVISION 1
 #define WHENDEBUG(x) if( (x) & DebugNum )
+#define NEW_WIFI
+#define WIFI_MANAGER
 //#define WEBSERIAL
 //#define PRINT_RESET
 //
@@ -29,4 +31,3 @@
 #define PIN_THERMO_CS 23 // thermocouple CS  VSPID IO23 pin 37
 #define PIN_THERMO_DO 19 // thermocouple DO  VSPIQ IO19 pin 31
 #endif
-

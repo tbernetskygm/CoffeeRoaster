@@ -2,12 +2,23 @@
 #include "UtilityFunctions.h"
 
 // Send Xml back to web client
+#ifndef NEW_WIFI
 void SendXML() {
+#else
+void SendXML(AsyncWebServerRequest *request) {
+  //char * xml_p = (char*)&XML[0];
+  String XMLs;
+  String tmp;
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   int timerValue=0;
   //loopCounter++;
-  //Serial.println("SendXML->sending xml");
+  
   //Serial.print("1 sizeof XML ");Serial.println(sizeof(XML));
-  strcpy(XML, "<?xml version = '1.0'?>\n<Data>\n");
+  sprintf(buf, "<?xml version =\"1.0\" encoding=\"UTF-8\"?><Data>");
+  tmp=String(buf);
+  XMLs += tmp;
  //Serial.print("1 XML length");Serial.println(strlen(XML));
   // send temp in F and C
   //if ( loopCounter >= 10)
@@ -16,42 +27,64 @@ void SendXML() {
   //  loopCounter = 0;
   //}
   // Send Version info
-  sprintf(buf, "<VERSION>%d.%02d.%02d</VERSION>\n", Release,Version,Revision);
-  strcat(XML, buf);
+  sprintf(buf, "<VERSION>%d.%02d.%02d</VERSION>", Release,Version,Revision);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
 
   // Send Temp values in C and F
-  sprintf(buf, "<TEMPC>%.2f</TEMPC>\n", tempC);
-  strcat(XML, buf);
-  sprintf(buf, "<TEMPF>%.2f</TEMPF>\n", tempF);
-  strcat(XML, buf);
+  sprintf(buf, "<TEMPC>%.2f</TEMPC>", tempC);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
+  sprintf(buf, "<TEMPF>%.2f</TEMPF>", tempF);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // if temp goes whacky send values
   if (tempC < 0 || tempC > 330)
   {
-    sprintf(buf, "<adcValue>%d</adcValue>\n", adcValue);
-    strcat(XML, buf);
-    sprintf(buf, "<voltage>%.2f</voltage>\n", voltageTemp);
-    strcat(XML, buf);
-    sprintf(buf, "<Rt>%.2f</Rt>\n", Rt);
-    strcat(XML, buf);
+    sprintf(buf, "<adcValue>%d</adcValue>", adcValue);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
+    sprintf(buf, "<voltage>%.2f</voltage>", voltageTemp);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
+    sprintf(buf, "<Rt>%.2f</Rt>", Rt);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   //Serial.print("2 XML length");Serial.println(strlen(XML));
   // Temp readout preference
-  sprintf(buf, "<TEMP_PREF>%d</TEMP_PREF>\n", TempPref);
-  strcat(XML, buf);
+  sprintf(buf, "<TEMP_PREF>%d</TEMP_PREF>", TempPref);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // Temp sensor select
-  sprintf(buf, "<TEMP_SENSOR>%d</TEMP_SENSOR>\n", tempSensorSelect);
-  strcat(XML, buf);
+  sprintf(buf, "<TEMP_SENSOR>%d</TEMP_SENSOR>", tempSensorSelect);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // Debug setting
-  sprintf(buf, "<DEBUG>%d</DEBUG>\n", DebugNum);
-  strcat(XML, buf);
+  sprintf(buf, "<DEBUG>%d</DEBUG>", DebugNum);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
 
   // Temp probe type
-  sprintf(buf, "<TEMP_PROBE>%d</TEMP_PROBE>\n", TempSensorKOhms);
-  strcat(XML, buf);
+  sprintf(buf, "<TEMP_PROBE>%d</TEMP_PROBE>", TempSensorKOhms);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
 
   // Bean Quantity 
-  sprintf(buf, "<BEAN_QTY>%d</BEAN_QTY>\n", BeanQuantity);
-  strcat(XML, buf);
+  sprintf(buf, "<BEAN_QTY>%d</BEAN_QTY>", BeanQuantity);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   
   // Send Timer 0 Minutes
   //if (TimerMin0 != TimerMin0New)
@@ -59,8 +92,10 @@ void SendXML() {
     TimerMin0 = TimerMin0New;
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     timerValue = TimerStartValue;
-    sprintf(buf, "<TMIN0>%d</TMIN0>\n", TimerMin0);
-    strcat(XML, buf);
+    sprintf(buf, "<TMIN0>%d</TMIN0>", TimerMin0);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
  // }
   // Send Timer 0 Seconds
   //if (TimerSec0 != TimerSec0New)
@@ -68,43 +103,60 @@ void SendXML() {
     TimerSec0 = TimerSec0New;
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     //TimerValue = TimerStartValue;
-    sprintf(buf, "<TSEC0>%d</TSEC0>\n", TimerSec0);
-    strcat(XML, buf);
+    sprintf(buf, "<TSEC0>%d</TSEC0>", TimerSec0);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
  // }
 
 //Serial.print("3 XML length");Serial.println(strlen(XML));
   // Send Timer Remaining Time
-  sprintf(buf, "<TIMEREM0>%s</TIMEREM0>\n", get_timer_string(TimerValue));
-  strcat(XML, buf);
+  sprintf(buf, "<TIMEREM0>%s</TIMEREM0>", get_timer_string(TimerValue));
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // Timer start stop
   if (rState->timerStart) {
-    strcat(XML, "<TSTART>1</TSTART>\n");
- 
+    sprintf(buf, "<TSTART>1</TSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<TSTART>0</TSTART>\n");
+    sprintf(buf, "<TSTART>0</TSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
 //Serial.print("4 XML length");Serial.println(strlen(XML));
    // Send Config Timer Remaining Time
-  sprintf(buf, "<CTIMEREM>%s</CTIMEREM>\n", get_timer_string(ConfigTimerValue));
-  strcat(XML, buf);
+  sprintf(buf, "<CTIMEREM>%s</CTIMEREM>", get_timer_string(ConfigTimerValue));
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // Send Config Step
-  sprintf(buf, "<C_STEP>%d</C_STEP>\n", ConfigStep);
-  strcat(XML, buf);
+  sprintf(buf, "<C_STEP>%d</C_STEP>", ConfigStep);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
 
     // Send Config Number of Steps
-  sprintf(buf, "<C_MAXSTEPS>%d</C_MAXSTEPS>\n", ConfigMaxSteps);
-  strcat(XML, buf);
+  sprintf(buf, "<C_MAXSTEPS>%d</C_MAXSTEPS>", ConfigMaxSteps);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
 
     // Send heatgun selection low=0 high=1
-  sprintf(buf, "<HEATGUN>%d</HEATGUN>\n", HEATGUNHIGH);
-  strcat(XML, buf);
-
+  sprintf(buf, "<HEATGUN>%d</HEATGUN>", HEATGUNHIGH);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   
     // Send Config Step Time
-  sprintf(buf, "<C_STEP_TIME>%d</C_STEP_TIME>\n", ConfigTimerStartValue);
-  strcat(XML, buf);
-  
+  sprintf(buf, "<C_STEP_TIME>%d</C_STEP_TIME>", ConfigTimerStartValue);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // Send UtilTimer Timer 0 Minutes
   if (PreTimerMin != PreTimerMinNew)
   {
@@ -113,9 +165,10 @@ void SendXML() {
     PreheatTimerValue = PreheatTimerStartValue;
     //CooldownTimerValue = PreheatTimerStartValue;
   }
-    sprintf(buf, "<PRE_TMIN0>%d</PRE_TMIN0>\n", PreTimerMin);
-    strcat(XML, buf);
-  
+    sprintf(buf, "<PRE_TMIN0>%d</PRE_TMIN0>", PreTimerMin);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
  //Serial.print("5 XML length");Serial.println(strlen(XML));
   // Send UtilTimer Timer 0 Seconds
  
@@ -127,81 +180,128 @@ void SendXML() {
     //CooldownTimerValue = PreheatTimerStartValue;
     //Serial.print("SendXML PreheatTimer timer value ");Serial.println(PreheatTimerValue);
   }
-    sprintf(buf, "<PRE_TSEC0>%d</PRE_TSEC0>\n", PreTimerSec);
-    strcat(XML, buf);
- 
+    sprintf(buf, "<PRE_TSEC0>%d</PRE_TSEC0>", PreTimerSec);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
 
    //  Send temp servo position
-    sprintf(buf, "<SERVO_POS>%d</SERVO_POS>\n", servoPos);
-    strcat(XML, buf);
+    sprintf(buf, "<SERVO_POS>%d</SERVO_POS>", servoPos);
+    //strcat(XML, buf);
+    tmp=String(buf);
+     XMLs += tmp;
    //Serial.print("6 XML length");Serial.println(strlen(XML));  
    
    //  Send temp servo new position
-    sprintf(buf, "<SERVO_POS_NEW>%d</SERVO_POS_NEW>\n", servoPosNew);
-    strcat(XML, buf);
+    sprintf(buf, "<SERVO_POS_NEW>%d</SERVO_POS_NEW>", servoPosNew);
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
     //Serial.print("7 XML length");Serial.println(strlen(XML));
   
   // Send UtilTimer Timer Remaining Time
-  sprintf(buf, "<PRE_TIMEREM0>%s</PRE_TIMEREM0>\n", get_timer_string(PreheatTimerValue));
-  strcat(XML, buf);
-  
+  sprintf(buf, "<PRE_TIMEREM0>%s</PRE_TIMEREM0>", get_timer_string(PreheatTimerValue));
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
+
   // Send Finish Temp
-  sprintf(buf, "<FINISH_TEMP>%d</FINISH_TEMP>\n", FinishTemp);
-  strcat(XML, buf);
-  
+  sprintf(buf, "<FINISH_TEMP>%d</FINISH_TEMP>", FinishTemp);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
+
   // Send Preheat Temp
-  sprintf(buf, "<PREHEAT_TEMP>%d</PREHEAT_TEMP>\n", PreheatTemp);
-  strcat(XML, buf);
-  
+  sprintf(buf, "<PREHEAT_TEMP>%d</PREHEAT_TEMP>", PreheatTemp);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
+
   // Send Coffee Selected
-  sprintf(buf, "<Coffee_Type>%d</Coffee_Type>\n", CoffeeOpt);
-  strcat(XML, buf);
-  
+  sprintf(buf, "<Coffee_Type>%d</Coffee_Type>", CoffeeOpt);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
+
   // Send Set Temp
-  sprintf(buf, "<Set_Temp>%.2f</Set_Temp>\n", setTemp);
-  strcat(XML, buf);
- 
+  sprintf(buf, "<Set_Temp>%.2f</Set_Temp>", setTemp);
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
     // Timer start stop
   if (rState->preheatTimerStart) {
-    strcat(XML, "<PTSTART>1</PTSTART>\n");
+    sprintf(buf, "<PTSTART>1</PTSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<PTSTART>0</PTSTART>\n");
+    sprintf(buf, "<PTSTART>0</PTSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
 //Serial.print("8 XML length");Serial.println(strlen(XML));
   // show mixer power enable led0 status
   if (rState->mixerpwr) {
-    strcat(XML, "<MIX>1</MIX>\n");
+    sprintf(buf, "<MIX>1</MIX>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<MIX>0</MIX>\n");
+    sprintf(buf, "<MIX>0</MIX>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
 
   if (MIXDIR) {
-    strcat(XML, "<MIXDIR>1</MIXDIR>\n");
+    sprintf(buf, "<MIXDIR>1</MIXDIR>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<MIXDIR>0</MIXDIR>\n");
+    sprintf(buf, "<MIXDIR>0</MIXDIR>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   // send heater power enable status
   // False is ON for SSR
   if (!rState->heaterpwr) {
-    strcat(XML, "<HEATER>1</HEATER>\n");
+    sprintf(buf, "<HEATER>1</HEATER>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<HEATER>0</HEATER>\n");
+    sprintf(buf, "<HEATER>0</HEATER>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   //Serial.print("9 XML length");Serial.println(strlen(XML));
   // send roasting status
   if (rState->doRoast) {
-    strcat(XML, "<ROASTING>1</ROASTING>\n");
+    sprintf(buf, "<ROASTING>1</ROASTING>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   else {
-    strcat(XML, "<ROASTING>0</ROASTING>\n");
+    sprintf(buf, "<ROASTING>0</ROASTING>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
   }
   
   //Serial.print("10 XML length");Serial.println(strlen(XML));
-  strcat(XML, "</Data>\n");
+  sprintf(buf, "</Data>");
+  //strcat(XML, buf);
+  tmp=String(buf);
+  XMLs += tmp;
   // wanna see what the XML code looks like?
   // actually print it to the serial monitor and use some text editor to get the size
   // then pad and adjust char XML[2048]; above
@@ -210,7 +310,16 @@ void SendXML() {
 
   // you may have to play with this value, big pages need more processing time, and hence
   // a longer timeout that 200 ms
+#ifndef NEW_WIFI
   Server.send(200, "text/xml", XML);
+#else
+  //Serial.printf("SendXML->sending xml length %d\n",XMLs.length());
+  AsyncWebServerResponse *resp = request->beginResponse(200, "application/xml", XMLs);
+  //resp->setContentType("application/xml");
+  //resp->setContent(XMLs);
+  resp->addHeader("Content-Length", String(XMLs.length()));
+  request->send(resp);
+#endif
   //Serial.print("After send XML length");Serial.println(strlen(XML));
-  XML[0]='\0';
+  //XML[0]='\0';
 }

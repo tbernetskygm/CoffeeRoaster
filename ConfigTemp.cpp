@@ -6,11 +6,11 @@
 //#include <LittleFS.h>
 //#define _FSYS LittleFS
 //#endif
-//#include <LittleFS.h>
+#include <LittleFS.h>
 // Code to run temp configuration
 #include <ESP32Servo.h>
 
-#include "ProjectDefines.h"
+//#include "ProjectDefines.h"
 #include "Globals.h"
 #include "GlobalStructs.h"
 #include "RoasterControls.h"
@@ -28,8 +28,10 @@ void RunTempConfig (int Step)
 #else
   String fileName;
 #endif
-  //char buff[64]= {'\0'};
+
+  char buff[64]= {'\0'};
   char * cdata_p=&buff[0];
+  String fileData;
   if (HEATGUNHIGH)
 	  fileName=ConfigHighFile;
   else
@@ -50,39 +52,45 @@ void RunTempConfig (int Step)
       Serial.print("RunTempConfig step :");Serial.println(Step);
     //strcpy(buff, "{ "); 
     //appendFile(LittleFS,fileName.c_str(), cdata_p);
-    sprintf(buf, "{\n\"NUM\": %d,\n", Step);
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "{\n\"NUM\": %d,\n", Step);
+    //strcat(buff,buf);
+    fileData = "{\n\"NUM\"" + String(Step) + ",\n";
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
     //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\"TMPF\": %.2f,\n", tempAvgF);
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "\"TMPF\": %.2f,\n", tempAvgF);
+    //strcat(buff,buf);
+    fileData+= "\"TMPF\": " + String(tempAvgF) + ",\n";
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
     //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\"TMPC\": %.2f,\n", tempAvgC);
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "\"TMPC\": %.2f,\n", tempAvgC);
+    //strcat(buff,buf);
+    fileData+= "\"TMPC\": " + String(tempAvgC) + ",\n";
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
     //appendFile(fileName.c_str(), cdata_p);
-    sprintf(buf, "\"POS\": %d\n", servoPos);
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "\"POS\": %d\n", servoPos);
+    //strcat(buff,buf);
+    fileData+= "\"POS\": " + String(servoPos) + ",\n";
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
     //appendFile(fileName.c_str(), cdata_p);
     if (Step > ConfigMaxSteps) 
     {
-      sprintf(buf, "}\n");
-      strcat(buff,buf);
-      WHENDEBUG(5)
-        Serial.printf("** buff size %d\n",strlen(buff));
+      //sprintf(buf, "}\n");
+      //strcat(buff,buf);
+      //WHENDEBUG(5)
+        //Serial.printf("** buff size %d\n",strlen(buff));
+      fileData += "}\n";
     }
     else
     { 
-      sprintf(buf, "},\n"); 
-      strcat(buff,buf);
-      WHENDEBUG(5)
-        Serial.printf("** buff size %d\n",strlen(buff));
+      //sprintf(buf, "},\n"); 
+      //strcat(buff,buf);
+      //WHENDEBUG(5)
+        //Serial.printf("** buff size %d\n",strlen(buff));
+      fileData += "},\n";
     }
 
     //appendFile(fileName.c_str(), cdata_p);
@@ -103,9 +111,10 @@ void RunTempConfig (int Step)
     Serial.print("RunTempConfig Done Send xml Step :");Serial.println(Step);
     //strcat(tempXML, "</ConfigData>\n");
 
-    sprintf(buf,"]\n}\n");
-    strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf,"]\n}\n");
+    //strcat(buff,buf);
+    //Serial.printf("** buff size %d\n",strlen(buff));
+    fileData += "]\n}\n";
 
     //Serial.print("RunTempConfig Done Send xml length :");Serial.println(strlen(tempXML));
     servoPosNew=0;
@@ -116,10 +125,14 @@ void RunTempConfig (int Step)
     // set servo back to 0
     servoPosNew=0;
   } 
-  appendFile(fileName.c_str(), cdata_p);
+  appendFile(fileName.c_str(), fileData);
 }
 
+#ifndef NEW_WIFI
 void SendTempConfigData()
+#else
+void SendTempConfigData(AsyncWebServerRequest *request)
+#endif
 {
   listDir( "/", 0);
 #ifndef SENDJSON
@@ -138,43 +151,84 @@ void SendTempConfigData()
   if (!file || file.isDirectory()){
     Serial.print("SendTempConfigData - failed to open file : ");Serial.println(fileName);
     //Server.send(201, "text/plain", "No Config Data available!!");
-    #ifndef SENDJSON
+#ifndef SENDJSON
+      #ifndef NEW_WIFI
     Server.send(200, "text/xml", "<?xml version = '1.0'?>\n<ConfigData>\n</ConfigData>\n");
-#else
+      #else
+    
+    request->send(200,"<?xml version = '1.0'?>\n<ConfigData>\n</ConfigData>\n","text/xml");
+      #endif
+    #else
+      #ifndef NEW_WIFI
     Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
-#endif
+      #else
+    request->send(200, " {\"NUM\": \"No Data\" } ", "application/json" );
+      #endif
+#endif //NDEF SENDJSON
 
     return;
   }
 #ifndef SENDJSON
   //Server.streamFile(file,"text/xml");
 #else
+   #ifndef NEW_WIFI
   Server.streamFile(file,"application/json");
+  #else
+  request->send(LittleFS, fileName, "application/json");
+  #endif
   //Server.send(200, "text/plain", "Parsing Config Data");
   parseJsonFile(fileName);
   PreheatServoPos=getServoPos(PreheatTemp);
 #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessTempProbe() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessTempProbe(AsyncWebServerRequest *request) {
+  String t_state ;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
   Serial.print("ProcessTempProbe "); Serial.println(t_state);
   TempSensorKOhms = t_state.toInt();
   Serial.print("ProcessTempProbe "); Serial.println(TempSensorKOhms);
   strcpy(buf, "");
   sprintf(buf, "%d", TempSensorKOhms);
   sprintf(buf, buf);
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
 
+#ifndef NEW_WIFI
 void ProcessConfigMaxSteps() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessConfigMaxSteps(AsyncWebServerRequest *request) {
+  String t_state ;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
   ConfigMaxSteps = t_state.toInt();
   Serial.print("ProcessConfigMaxSteps ConfigMaxSteps "); Serial.println(ConfigMaxSteps);
   //Serial.print("ProcessConfigMaxSteps ConfigMaxStepsNew: "); Serial.println(ConfigMaxStepsNew);
   sprintf(buf, "%d", ConfigMaxSteps);
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
 void SetupConfigTest()
@@ -182,8 +236,9 @@ void SetupConfigTest()
   String fileName;
 
   //char buff[64]= {'\0'};
-  char * cdata_p=&buff[0];
+  //char * cdata_p=&buff[0];
   Serial.printf("SetupConfigTest\n");
+  String fileData="{\n\t\"Configuration Date\": ";
   if (HEATGUNHIGH)
 	  fileName=ConfigHighFile;
   else
@@ -193,12 +248,14 @@ void SetupConfigTest()
   {
     deleteFile(fileName.c_str());
   }
-  sprintf(buff, "\0");
-  strcpy(buf, "{\n\"Configuration Date\": ");
-  strcat(buff,buf);
-  sprintf(buf, "\"%s\",\n\"steps\": [\n",get_date_string().c_str());
-  strcat(buff,buf);
-  writeFile(fileName.c_str(), cdata_p);
+  //sprintf(buff, "\0");
+  //strcpy(buf, "{\n\"Configuration Date\": ");
+  //strcat(buff,buf);
+  fileData += "\"" + get_date_string() + "\"";
+  fileData += ",\n\"steps\": [\n";
+  //sprintf(buf, "\"%s\",\n\"steps\": [\n",get_date_string().c_str());
+  //strcat(buff,buf);
+  writeFile(fileName.c_str(), fileData);
   //appendFile(fileName.c_str(), cdata_p);
 
   // calculate servo positions based on ConfigMaxSteps and ConfigSteps
@@ -214,15 +271,20 @@ void SetupConfigTest()
   Serial.printf("SetupConfigTest done\n");
 }
 
+#ifndef NEW_WIFI
 void ProcessTempConfig() {
+#else
+void ProcessTempConfig(AsyncWebServerRequest *request) {
+  char buf[64];
+  char * buf_p = &buf[0];
+#endif
   TEMP_CONFIG = !TEMP_CONFIG;
-  //String t_state = Server.arg("VALUE");
-  //ConfigMaxStepsNew = t_state.toInt();
+
   Serial.print("ProcessTempConfig received ");Serial.println(TEMP_CONFIG); 
   if (TEMP_CONFIG)
   {
     // turn on heater
-    ProcessButtonHeaterPwr();
+    ProcessButtonHeaterPwr(request);
     ConfigSteps = ConfigMaxSteps;
     ConfigStep=0;
     SetupConfigTest();
@@ -233,30 +295,59 @@ void ProcessTempConfig() {
     ConfigElaspedTime=0;// in seconds
     
     ConfigTimerValue = ConfigTimerStartValue;
-    timerAlarmEnable(UtilTimer);
-    timerStart(UtilTimer);
+    timerAlarm(UtilTimer, 1000000, true,0);
+    // old way timerAlarmEnable(UtilTimer);
+    // old way timerStart(UtilTimer);
     
   } else {
     ClearConfigTimer();
     // turn off heater
-    ProcessButtonHeaterPwr();
+    ProcessButtonHeaterPwr(request);
   }
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", "TempConfig started"); //Send web page
+  #else
+  request->send(200,buf_p,"text/plain");
+  #endif
 }
 
 
+#ifndef NEW_WIFI
 void ProcessConfigStepTime() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessConfigStepTime(AsyncWebServerRequest *request) {
+  char buf[64];
+  char * buf_p = &buf[0];
+  String t_state;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
   ConfigTimerStartValue = t_state.toInt();
   //Serial.print("ProcessConfigStepTime ConfigTimerStartValue "); Serial.println(ConfigTimerStartValue);
   //Serial.print("ProcessConfigMaxSteps ConfigMaxStepsNew: "); Serial.println(ConfigMaxStepsNew);
   sprintf(buf, "%d", ConfigTimerStartValue);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+#else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+#endif
 }
 
+#ifndef NEW_WIFI
 void UpdateHeatGunSlider() {
   String t_state = Server.arg("VALUE");
+#else
+void UpdateHeatGunSlider(AsyncWebServerRequest *request) {
+  //Check if GET arg exists
+  String t_state;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
 
+#endif
   // convert the string sent from the web page to an int
   int tmp  = t_state.toInt();
   Serial.print("UpdateHeatgunSlider "); Serial.println(tmp);
@@ -268,17 +359,29 @@ void UpdateHeatGunSlider() {
 
   sprintf(buf, "%d", tmp);
   // now send it back
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  request->send(200, buf_p,"text/plain");
+  #endif
 
 }
 
-
+#ifndef NEW_WIFI
 void SendRoastLogData()
+#else
+void SendRoastLogData(AsyncWebServerRequest *request)
+#endif
 {
   listDir( "/", 0);
   String fileName;
   String reqFile = "";
+#ifndef NEW_WIFI
   reqFile = Server.arg("VALUE");
+#else
+  if(request->hasArg("VALUE"))
+    reqFile = request->arg("VALUE");
+#endif
 
   if (reqFile.length() > 0)
     fileName=reqFile;
@@ -292,12 +395,24 @@ void SendRoastLogData()
     File file = openFile(fileName.c_str(),"r"); 
     if (!file || file.isDirectory()){
       Serial.print("SendRoastLogData - failed to open file : ");Serial.println(fileName);
+#ifndef NEW_WIFI
       Server.send(201, "text/plain", "No Config Data available!!");
+#else
+      request->send(201,"No Config Data Available!", "text/plain");
+#endif
       return;
     }
+#ifndef NEW_WIFI
     Server.streamFile(file,"application/json");
+#else
+    request->send(LittleFS, fileName, "application/json");
+#endif
   } else {
     Serial.print("SendRoastLogData - file does not exist file : ");Serial.println(fileName);
+#ifndef NEW_WIFI
     Server.send(200, "application/json", " {\"NUM\": \"No Data\" } ");
+#else
+      request->send(200, " {\"NUM\": \"No Data\" } ", "application/json");
+#endif
   }
 }

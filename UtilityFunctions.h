@@ -1,6 +1,9 @@
 
-#include <SPIFFS.h>
-
+//#include <SPIFFS.h>
+#ifdef NEW_WIFI
+//bool initWiFi();
+//String processor(const String& var);
+#endif
  String get_timer_string(int value);
  String get_temp_string();
  String get_date_string();

@@ -1,9 +1,11 @@
+
+
 #include "ProjectDefines.h"
 #include<Arduino.h>
 
 #include <ArduinoJson.h>
 #include <time.h>
-#include <ESPmDNS.h>
+
 /*
   CoffeeRoaster.ino, Modified from
   Example for the AutoConnect library.
@@ -17,27 +19,62 @@
 python3 .arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool.py --chip auto --port /dev/ttyUSB0 --baud 115200 write_flash 0xeb000 /tmp/arduino_build_924397/CoffeeRoaster.spiffs.bin
 */
 #if defined(ARDUINO_ARCH_ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+// #include <ESP8266WiFi.h>
+ //#include <ESP8266WebServer.h>
 #elif defined(ARDUINO_ARCH_ESP32)
-#include <WiFi.h>
+// #include <WiFi.h>
+#include <ESPmDNS.h>
+// #ifndef WEBSERIAL
+//  #include <WebServer.h>
+// #endif
+#endif
 
-#ifndef WEBSERIAL
-#include <WebServer.h>
-#endif
-#endif
+#include "LittleFS.h"
+
 #ifdef WEBSERIAL
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <WebSerial.h>
+//#include <AsyncTCP.h>
+//#include <ESPAsyncWebServer.h>
+//#include <WebSerial.h>
 #endif
-#include <AutoConnect.h>
+
+#ifdef AUTO_CONNECT
+//#include <AutoConnect.h>
+#endif
+
+#ifdef NEW_WIFI
+//#include <AsyncTCP.h>
+//#define WEBSERVER_H
+//#include <ESPAsyncWebServer.h>
+  #ifdef WIFI_MANAGER
+    #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+  #endif
+  #ifdef ASYNC_WIFI
+   //#include <WiFi.h>
+   //#include <WiFiClient.h>
+   
+   //#include <ESPAsync_WiFiManager.h>  
+  #endif
+#endif
+
 #ifdef PRINT_RESET
 #include <rom/rtc.h>
 #endif
+
 #include "GlobalStructs.h"
+#include "SendXML.h"
 #include "RoasterControls.h"
 #include "UtilityFunctions.h"
+#include "SendXML.h"
+#include "UtilTimer.h"
+#include "ConfigTemp.h"
+
+#include "ConfigPage.h"
+#include "WebPage.h"
+#ifdef USE_FSYS
+
+#include "FileSystemFunctions.h"
+#endif
+
 #ifdef Tempservo
 #include <ESP32Servo.h>
 
@@ -48,13 +85,22 @@ python3 .arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool.py --chip auto 
 #if defined(ARDUINO_ARCH_ESP8266)
 ESP8266WebServer Server;
 #elif defined(ARDUINO_ARCH_ESP32)
-#ifndef WEBSERIAL
-WebServer Server;
+
+  #ifdef AUTO_CONNECT
+  WebServer Server;
+  #endif
+
+  #ifdef WEBSERIAL
+  AsyncWebServer Server(80);
+  #endif
+
+  #ifdef NEW_WIFI
+  AsyncWebServer Server(80);
+  //AsyncEventSource events("/events");
+  //AsyncDNSServer dnsServer;
+  #endif
 #endif
-#ifdef WEBSERIAL
-AsyncWebServer Server(80);
-#endif
-#endif
+
 #ifdef Tempservo
 ESP32PWM pwm;
 Servo TempServo;
@@ -87,11 +133,26 @@ const int daylightOffset_sec = 3600;
 // GPIO2 ADC2_CH2  mix power
 // GPIO0 ADC2_CH1  heater power
 // GPIO4 ADC2_CH0
+
+#ifdef AUTO_CONNECT
 AutoConnect         Portal(Server);
 AutoConnectConfig Config;
+#endif
+
+#ifdef NEW_WIFI
+
+// Timer variables
+unsigned long previousMillis = 0;
+const long interval = 10000;
+bool wm_nonblocking = false; // change to true to use non blocking
+
+WiFiManager wm; // global wm instance
+WiFiManagerParameter custom_field; // global param ( for non blocking w params )
+#endif
+
 // json stuff
 ConfigStruct tempData[180];
-//DynamicJsonDocument jdoc(1024);
+
 const char* host="CoffeeRoaster";
 
 int Release = _RELEASE;
@@ -180,7 +241,6 @@ String Configuration_Date;
 String RoastLogFile="/RoastLog.json";
 String RoastLogHighFile="/RoastLogHigh.json";
 
-String FileMonitorLog="/SerialMonitor.log";
 File uploadFile;
 File logFile;	
 
@@ -201,11 +261,10 @@ double Vs=3.3;
 hw_timer_t *RoastTimer = NULL;
 hw_timer_t *UtilTimer = NULL;
 // the XML array size needs to be bigger that your maximum expected size. 2048 is way too big for this example
-char XML[2048];
-//char tempXML[1024];
 // just some buffer holder for char operations
-char buf[64];
-char buff[512];
+//char buf[64];
+//char *buf_p = &buf[0];
+
 #ifdef THERMOCOUPLE
 MAX6675 thermocouple(PIN_THERMO_CLK,PIN_THERMO_CS,PIN_THERMO_DO);
 #endif
@@ -238,22 +297,15 @@ void print_reset_reason(RESET_REASON reason)
 }
 #endif
 
-#include "SendXML.h"
-#include "UtilTimer.h"
-#include "ConfigTemp.h"
-
-#include "ConfigPage.h"
-#include "WebPage.h"
-#ifdef USE_FSYS
-#include "FileSystemFunctions.h"
-#endif
 
 
 
+#ifdef AUTO_CONNECT
 bool atDetect(IPAddress& softapIP) {
   Serial.println("CoffeeRoaster Captive  started, SoftAP IP:" + softapIP.toString());
   return true;
 }
+#endif
 
 void printLocalTime()
 {
@@ -266,8 +318,12 @@ void printLocalTime()
   Serial.println(&timeinfo, "printLocalTime : %A, %B %d %Y %H:%M:%S");
 }
 
-void returnOK() {
+void returnOK(AsyncWebServerRequest *request) {
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", "");
+  #else
+  request->send(200,"","text/plain");
+  #endif
 }
 
 #ifdef WEBSERIAL
@@ -300,35 +356,124 @@ void exitOTAError(uint8_t err) {
   Serial.printf("OTA error occurred %d\n", err);
 }
 #endif
+#ifdef WIFI_MANAGER
+String getParam(String name){
+  //read parameter from server, for customhmtl input
+  String value;
+  if(wm.server->hasArg(name)) {
+    value = wm.server->arg(name);
+  }
+  return value;
+}
 
+void saveParamCallback(){
+  Serial.println("[CALLBACK] saveParamCallback fired");
+  Serial.println("PARAM customfieldid = " + getParam("customfieldid"));
+}
+#endif
+#ifdef NEW_WIFI
+
+#endif
+#ifndef NEW_WIFI
 void SetDebug() {
   String t_state = Server.arg("VALUE");
   DebugNum = t_state.toInt();
-  Serial.print("SetDebug DebugNum "); Serial.println(DebugNum);
+#else
+void SetDebug(AsyncWebServerRequest *request) {
+  //Check if GET arg exists
+  String t_state;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+  
+#endif
+
+  //Serial.print("SetDebug DebugNum "); Serial.println(DebugNum);
   //Serial.print("ProcessConfigMaxSteps ConfigMaxStepsNew: "); Serial.println(ConfigMaxStepsNew);
   sprintf(buf, "%d", DebugNum);
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
 #define FORMAT_FS_IF_FAILED true
 void setup() {
+  delay(1000);
+  Serial.begin(115200);
+  Serial.println();
 
+#ifndef NEW_WIFI
   Config.apid = "CoffeeRoaster";
   Config.autoReconnect = true;
-#ifdef OTA_T
+  #ifdef OTA_T
   Config.ota = AC_OTA_BUILTIN;
-#endif
-#ifdef OTA_T
+  #endif
+  #ifdef OTA_T
   Portal.config(Config);
   Portal.onOTAStart(exitOTAStart);
   Portal.onOTAEnd(exitOTAEnd);
   Portal.onOTAProgress(exitOTAProgress);
   Portal.onOTAError(exitOTAError);
-#endif
+  #endif
+#else
+  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP  
+  Serial.setDebugOutput(true);  
+  delay(3000);
+  Serial.printf("NEW_WIFI starting.\n");
+  initLittleFS();
+
+#ifdef ASYNC_WIFI
+  #if ( USING_ESP32_S2 || USING_ESP32_C3 )
+  ESPAsync_WiFiManager wm(&server, NULL, "AsyncESP32-FSWebServer");
+#else
+  AsyncDNSServer dnsServer;
   
-  delay(1000);
-  Serial.begin(115200);
-  Serial.println();
+  ESPAsync_WiFiManager wm(&server, &dnsServer, "AsyncESP32-FSWebServer");
+#endif
+
+#endif
+  //ssid = readFile(ssidPath);
+  //pass = readFile(passPath);
+  //ip = readFile(ipPath);
+  //gateway = readFile(gwPath);
+  #ifdef WIFI_MANAGER
+  if(wm_nonblocking) wm.setConfigPortalBlocking(false);
+
+  // add a custom input field
+  int customFieldLength = 40;
+  // test custom html(radio)
+  const char* custom_radio_str = "<br/><label for='customfieldid'>Custom Field Label</label><input type='radio' name='customfieldid' value='1' checked> One<br><input type='radio' name='customfieldid' value='2'> Two<br><input type='radio' name='customfieldid' value='3'> Three";
+  new (&custom_field) WiFiManagerParameter(custom_radio_str); // custom html input
+  
+  wm.addParameter(&custom_field);
+  wm.setSaveParamsCallback(saveParamCallback);
+  std::vector<const char *> menu = {"wifi","info","param","sep","restart","exit"};
+  wm.setMenu(menu);
+  //wm.resetSettings(); // wipe settings
+  // set dark theme
+  wm.setClass("invert");
+  wm.setConfigPortalTimeout(90); // auto close configportal after n seconds
+  bool res;
+  // res = wm.autoConnect(); // auto generated AP name from chipid
+  // res = wm.autoConnect("AutoConnectAP"); // anonymous ap
+  res = wm.autoConnect("CoffeeRoasterAP","123456789"); // password protected ap
+
+  if(!res) {
+    Serial.println("Failed to connect or hit timeout");
+    // ESP.restart();
+  } 
+  else {
+    //if you get here you have connected to the WiFi    
+    Serial.printf("connected...yay :)mode %s status %d\n", wm.getModeString(WiFi.getMode()), WiFi.status());
+  }
+  #endif
+#endif
+
+ 
 
 #ifdef WEBSERIAL
   WebSerial.begin(&Server);
@@ -367,9 +512,13 @@ void setup() {
   pinMode(PIN_MIX_POWER_ENABLE, OUTPUT);
   pinMode(PIN_HEATER_POWER_ENABLE, OUTPUT);
   pinMode(PIN_MIXER_DIR, OUTPUT);
+#ifndef NEW_WIFI
   // Put the home location of the web site.
   // But in usually, setting the home uri is not needed cause default location is "/".
   Portal.home("/Roast");
+#else
+ 
+  #endif
   // Turn off heater SSR
   digitalWrite(PIN_HEATER_POWER_ENABLE, HEATERPWR);
 #ifdef Tempservo
@@ -394,7 +543,7 @@ void setup() {
   // setup task to update roast stuff
   xTaskCreate(UpdateRoastState,"Update Roast State",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
   xTaskCreate(HandleDevices,"Handle Temps and Servo Moving",2000,(void*)DebugNum,1,NULL);
-
+  #ifndef NEW_WIFI
   Server.on("/", handleNewRoot);
   Server.on("/Roast", handleNewRoot);
   Server.on("/style.css", sendStyle);
@@ -415,26 +564,76 @@ void setup() {
     });
 
   Portal.onNotFound([]() {
-      Serial.printf("Portal.onNotFound uri %s \n",Server.uri().c_str());
+      Serial.printf("Portal.onNotFound uri %s \n",Server.uri().c_str()));
+      #ifndef NEW_WIFI
       for (uint8_t i=0; i<Server.args(); i++){
-	Serial.printf(" request NAME: %s  VALUE: %s\n\n",Server.argName(i),Server.arg(i));
+        
+	      Serial.printf(" request NAME: %s  VALUE: %s\n\n",Server.argName(i),Server.arg(i));
+        
       }
+      #endif
     Serial.println("Portal.onNotFound calling handleNotFound");
     handleNotFound(Server.uri(),true);
     });
 
   Server.on("/edit", HTTP_DELETE, handleFileDelete);
+#else
+  if(WiFi.getMode() == WIFI_MODE_STA)
+  {
+    
+/*
+  Server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
+    request->send(200);
+  },handleNewRoot);
+ */ 
+  Serial.printf("Setting up / GET -> handleNewRoot Callback\n");
+  Server.on("/", HTTP_GET, handleNewRoot);
+  Server.on("/Roast", HTTP_GET, handleNewRoot);
+  /*
+  Server.on("/Roast", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200);
+  },handleNewRoot);
+  */
+  Serial.printf("Setting up /style.css -> sendStyle Callback\n");
+  Server.on("/style.css", HTTP_GET, sendStyle);
+
+  Serial.printf("Setting up /Files -> shandleFilesPage Callback\n");
+  Server.on("/Files", HTTP_GET, handleFilesPage);
+  /*
+  Server.on("/Files", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200);
+  },handleFilesPage);
+  */
+  Serial.printf("Setting up /list -> printDirectory Callback\n");
+  Server.on("/list", HTTP_GET, printDirectory); //FileSystemFunctions.cpp
+  }
+#endif
   // These are in ConfigPage.h
 #ifdef CONFIG_PAGE
+  #ifndef NEW_WIFI
   Server.on("/SysConfig", handleConfigPage);
   Server.on("/Graphs", handleGraphsPage);
   Server.on("/graphs.js", handleGraphsJsPage);
+  #else
+  Server.on("/SysConfig", HTTP_GET, handleConfigPage);
+  Server.on("/Graphs", HTTP_GET, handleGraphsPage);
+  Server.on("/graphs.js", HTTP_GET, handleGraphsJsPage);
+  #endif
 #endif
 #ifdef GRAPH_PAGE
+ #ifndef NEW_WIFI
+ 
  Server.on("/charts.js", handleChartsJsPage);
+ #else
+ if(WiFi.getMode() == WIFI_MODE_STA)
+ {
+   Server.on("/charts.js", HTTP_GET, handleChartsJsPage);
+ }
+ #endif
 #endif
+#ifndef NEW_WIFI
   Server.on("/xml", SendXML);
-  Server.on("/UPDATE_SLIDER", UpdateSlider);
+  Server.on("/UPDATE_TEMP_SLIDER", UpdateSlider);
   Server.on("/BUTTON_MIXPWR", ProcessButtonMixPwr);
   Server.on("/BUTTON_MIXDIR", ProcessButtonMixDir);
   Server.on("/BUTTON_TIMER_START", ProcessButtonTimerStart);
@@ -455,9 +654,35 @@ void setup() {
   Server.on("/COFFEE_TYPE", ProcessCoffeeType);
 
   Server.on("/SetRoastSettings", ProcessRoastSettingsButton);
-
+#else
+  if(WiFi.getMode() == WIFI_MODE_STA)
+  {
+    Serial.printf("Setting up /xmlUpdate GET -> SendXML Callback\n");
+    Server.on("/xmlUpdate", HTTP_GET , SendXML);
+    //Server.on("/UPDATE_TEMP_SLIDER", HTTP_POST , UpdateSlider);
+    //Serial.printf("Setting up /BUTTON_MIXPWR PUT -> ProcessButtonMixPwr\n");
+    Server.on("/BUTTON_MIXPWR", HTTP_POST , ProcessButtonMixPwr);
+    Server.on("/BUTTON_MIXDIR", HTTP_POST , ProcessButtonMixDir);
+    Server.on("/BUTTON_TIMER_START", HTTP_POST , ProcessButtonTimerStart);
+    Server.on("/BUTTON_TIMER_ADD", HTTP_POST , ProcessButtonTimerAdd);
+    Server.on("/BUTTON_TIMER_SUB", HTTP_POST , ProcessButtonTimerSub);
+    Server.on("/BUTTON_ROAST_START", HTTP_POST , ProcessButtonRoastStart);
+    Server.on("/BUTTON_HEATER_PWR", HTTP_POST , ProcessButtonHeaterPwr);
+    Server.on("/MIN_BUTTON_0", HTTP_POST , ProcessMinButton_0);
+    Server.on("/SEC_BUTTON_0", HTTP_POST , ProcessSecButton_0);
+    Server.on("/PRE_MIN_BUTTON_0", HTTP_POST , ProcessPreMinButton_0);
+    Server.on("/PRE_SEC_BUTTON_0", HTTP_POST , ProcessPreSecButton_0);
+    Server.on("/PRE_TEMP_BUTTON",  HTTP_POST ,ProcessPreTempButton);
+    Server.on("/PREHEAT_TIMER_START", HTTP_POST , ProcessPreheatTimerStart);
+    Server.on("/FINAL_TEMP_BUTTON",  HTTP_POST ,ProcessFinalTempButton);
+    Server.on("/BEAN_QTY_BUTTON",  HTTP_POST ,ProcessBeanQuantityButton);
+    Server.on("/COFFEE_TYPE",  HTTP_POST ,ProcessCoffeeType);
+    Server.on("/SetRoastSettings", HTTP_GET , ProcessRoastSettingsButton);
+  }
+#endif
 #ifdef CONFIG_PAGE 
   // Config page 
+  #ifndef NEW_WIFI
   Server.on("/TEMP_PREF", ProcessTempPref);
 
   Server.on("/TEMP_PROBE", ProcessTempProbe);
@@ -472,7 +697,29 @@ void setup() {
   Server.on("/TEMP_CONFIG_REQ", SendTempConfigData); //ConfigTemp.cpp
   Server.on("/ROAST_LOG_REQ", SendRoastLogData); //ConfigTemp.cpp
   Server.on("/DEBUG_VAL", SetDebug); //CoffeeRoaster.ino
+  #else
+  if(WiFi.getMode() == WIFI_MODE_STA)
+  {
+    Server.on("/ROAST_LOG_REQ",HTTP_GET, SendRoastLogData); //ConfigTemp.cpp
+    Server.on("/TEMP_PREF", HTTP_POST, ProcessTempPref);
 
+    Server.on("/TEMP_PROBE", HTTP_POST, ProcessTempProbe);
+    //Server.on("/REDIRECT", HTTP_GET, ProcessFileRedirect);
+    Server.on("/UPDATE_TEMP_SLIDER", HTTP_POST, UpdateTempSlider);
+    Server.on("/UPDATE_TEMPSENSOR_SLIDER", HTTP_POST, UpdateTempSensorSlider);
+    Server.on("/UPDATE_HEATGUN_SLIDER", HTTP_POST, UpdateHeatGunSlider);
+  
+    Server.on("/TEMP_CONFIG_MAX_STEPS", HTTP_POST, ProcessConfigMaxSteps);
+    Server.on("/TEMP_CONFIG_STEP_TIME", HTTP_POST, ProcessConfigStepTime);
+    Server.on("/START_TEMP_CONFIG", HTTP_POST, ProcessTempConfig);
+    Server.on("/TEMP_CONFIG_REQ", HTTP_GET, SendTempConfigData); //ConfigTemp.cpp
+    Server.on("/ROAST_LOG_REQ",HTTP_GET, SendRoastLogData); //ConfigTemp.cpp
+  
+    Server.on("/DEBUG_VAL",HTTP_POST, SetDebug);
+  }
+  #endif
+
+  #ifndef NEW_WIFI
   /*handling uploading file */
   Server.on("/update", HTTP_POST, [](){
     Server.sendHeader("Connection", "close");
@@ -498,10 +745,79 @@ void setup() {
       opened = false;
     }
   });
+  #else
+  Server.onNotFound([](AsyncWebServerRequest * request) 
+    {
+      Serial.print(F("NOT_FOUND: "));
+      //Serial.printf("method = %d\n",request->method());
+      if (request->method() == HTTP_GET)
+        Serial.print(F("GET"));
+      else if (request->method() == HTTP_POST)
+        Serial.print(F("POST"));
+      else if (request->method() == HTTP_DELETE)
+        Serial.print(F("DELETE"));
+      else if (request->method() == HTTP_PUT)
+        Serial.print(F("PUT"));
+      else if (request->method() == HTTP_PATCH)
+        Serial.print(F("PATCH"));
+      else if (request->method() == HTTP_HEAD)
+        Serial.print(F("HEAD"));
+      else if (request->method() == HTTP_OPTIONS)
+        Serial.print(F("OPTIONS"));
+      else
+        Serial.print(F(" UNKNOWN"));
+      
+      Serial.println(" http://" + request->host() + request->url());
+
+      if (request->contentLength()) 
+      {
+        Serial.println("_CONTENT_TYPE: " + request->contentType());
+        Serial.println("_CONTENT_LENGTH: " + request->contentLength());
+      }
+
+      int headers = request->headers();
+      int i;
+    
+      for (i = 0; i < headers; i++) 
+      {
+        AsyncWebHeader* h = (AsyncWebHeader *)request->getHeader(i);
+        Serial.println("_HEADER[" + h->name() + "]: " + h->value());
+      }
+
+      int params = request->params();
+    
+      for (i = 0; i < params; i++) 
+      {
+        AsyncWebParameter* p = (AsyncWebParameter *)request->getParam(i);
+      
+        if (p->isFile()) 
+        {
+          Serial.println("_FILE[" + p->name() + "]: " + p->value() + ", size: " + p->size());
+        } 
+        else if (p->isPost()) 
+        {
+          Serial.println("_POST[" + p->name() + "]: " + p->value());
+        } 
+        else 
+        {
+          Serial.println("_GET[" + p->name() + "]: " + p->value());
+        }
+      }
+
+      request->send(404);
+    });
+  //FIXME
+  if(WiFi.getMode() == WIFI_MODE_STA)
+  {
+    Serial.println("--- Starting Web Server ---");
+    Server.begin();
+  }
+  #endif
 
 #endif
   // test temp+config
   //temp_config(TempServo, 10,100);
+#ifndef NEW_WIFI
   // Starts user web site included the AutoConnect portal.
   Portal.onDetect(atDetect);
   if (Portal.begin()) {
@@ -513,6 +829,7 @@ void setup() {
       yield();
     }
   }
+#endif
   // Init and get the time
   Serial.println("Setting up ntp time");
   configTime(gmtOffset_sec,daylightOffset_sec,ntpServer);
@@ -524,9 +841,13 @@ void setup() {
 }
 
 void loop() {
+  /*
   //Serial.println("This is loop()");
+#ifndef NEW_WIFI
   Server.handleClient();
   Portal.handleRequest();   // Need to handle AutoConnect menu.
+#else
+#endif
   if (WiFi.status() == WL_IDLE_STATUS) {
     Serial.println("Reset wifi idle This is loop()");
 #if defined(ARDUINO_ARCH_ESP8266)
@@ -538,7 +859,6 @@ void loop() {
     Serial.println("Wifi Idle restarting");
     delay(500);
   }
-/*
 #ifdef Tempservo
  // init servoPos =0 servoPosNew 0 
   if ( servoPos != servoPosNew)
@@ -566,6 +886,7 @@ void loop() {
   }
 #endif
 */
+
   // check for utilTimerSemaphore
   if (xSemaphoreTake(utilTimerSemaphore, 0) == pdTRUE){
     //Serial.print("utilTimerSemaphore tempXML length :");Serial.println(strlen(tempXML));
@@ -587,6 +908,7 @@ void loop() {
     }
 #endif
   }
+/*
 //  if (tempSensorSelect == 0)
 //    readThermocoupleTemps();
 //  else
@@ -594,24 +916,53 @@ void loop() {
   //Serial.print("C = "); 
   //Serial.println(thermocouple.readCelsius());
   delay(500);
+  */
 }
 
-
+#ifndef NEW_WIFI
 void ProcessTempPref() {
+#else
+void ProcessTempPref(AsyncWebServerRequest *request) {
+#endif
   String t_state ="";
+  #ifndef NEW_WIFI
   t_state = Server.arg("VALUE");
-
+  #else
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
   Serial.print("ProcessTempPref "); Serial.println(t_state);
   if ( t_state == "F" )
     TempPref = true;
   else
     TempPref = false;
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+  #else
+  request->send(200,"","text/plain");
+  #endif
 }
 
+#ifndef NEW_WIFI
 void UpdateTempSlider() {
+#else
+void UpdateTempSlider(AsyncWebServerRequest *request) {
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
+
   String t_state ="";
+  #ifndef NEW_WIFI
   t_state = Server.arg("VALUE");
+  #else
+  //AsyncWebServerRequest *request;
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
   int servoVal=-1;
   // convert the string sent from the web page to an int
   servoPosNew = t_state.toInt();
@@ -622,21 +973,44 @@ void UpdateTempSlider() {
   setTemp=getTempVal(servoPosNew);
   sprintf(buf, "%d %.2f", servoPosNew,setTemp);
   // now send it back
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
   //Serial.print("UpdateTempSlider Servo Attached = " );Serial.println(TempServo.attached());
   //Serial.print("UpdateTempSlider Servo read = " );Serial.println(servoVal);
 }
 
 
-
+#ifndef NEW_WIFI
 void UpdateTempSensorSlider() {
+#else
+void UpdateTempSensorSlider(AsyncWebServerRequest *request) {
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   String t_state ="";
+   
+  #ifndef NEW_WIFI
   t_state = Server.arg("VALUE");
+  #else
+  
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
   // convert the string sent from the web page to an int
   tempSensorSelect = t_state.toInt();
   Serial.print("UpdateTempSensorSlider new : "); Serial.println(tempSensorSelect);
   // if config data not loaded,get it
   sprintf(buf, "TempSensorSelect %d ", tempSensorSelect);
   // now send it back
+  #ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  request->send(200,buf_p,"text/plain");
+  #endif
 }

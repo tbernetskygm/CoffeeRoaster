@@ -1,3 +1,5 @@
+
+
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
@@ -8,7 +10,7 @@
 #include <ESP8266WebServer.h>
 #elif defined(ARDUINO_ARCH_ESP32)
 #include <WiFi.h>
-#include <WebServer.h>
+//#include <WebServer.h>
 #endif
 
 #include <FS.h>
@@ -21,7 +23,12 @@ extern Servo TempServo;
 #if defined(ARDUINO_ARCH_ESP8266)
 extern ESP8266WebServer Server;
 #elif defined(ARDUINO_ARCH_ESP32)
+#ifdef NEW_WIFI
+#include <ESPAsyncWebServer.h>
+extern AsyncWebServer Server;
+#else
 extern WebServer Server;
+#endif
 #endif
 #ifndef BUILTIN_LED
 //#define BUILTIN_LED  2  // backward compatibility
@@ -33,7 +40,30 @@ extern WebServer Server;
 extern int Release;
 extern int Version;
 extern int Revision;
+#ifdef NEW_WIFI
+extern const char* PARAM_INPUT_1 ;
+extern const char* PARAM_INPUT_2;
+extern const char* PARAM_INPUT_3;
+extern const char* PARAM_INPUT_4;
+// Values from html form
+//extern String ssid;
+//extern String pass;
+//extern String ip;
+//extern String gateway;
+// File Paths to save connection data
+//extern const char* ssidPath;
+//extern const char* passPath;
+//extern const char* ipPath;
+//extern const char* gwPath;
 
+//extern IPAddress localIP;
+//extern IPAddress localGateway;
+//extern IPAddress subnet;
+
+// Timer variables
+extern unsigned long previousMillis;
+extern const long interval;
+#endif
 // Add another GPIO pin for Basket Mixer Relay
 // By default it will go in fwd (clockwise)
 
@@ -146,13 +176,19 @@ extern double Rt;
 extern double adcMax;
 extern double Vs;
 // the XML array size needs to be bigger that your maximum expected size. 2048 is way too big for this example
-extern char XML[2048];
+//extern char XML[2048];
 //extern char tempXML[];
 // just some buffer holder for char operations
 extern char buf[64];
-extern char buff[512];
+extern char *buf_p;
+//extern char buff[512];
+//extern char *buff_p;
 extern bool first;
 extern RoastState  R_State;
 extern RoastState * rState;
+extern String ssid;
+extern String pass;
+extern String ip;
+extern String gateway;
 
 #endif

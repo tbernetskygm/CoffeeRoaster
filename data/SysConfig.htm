@@ -109,7 +109,7 @@
 </html>
 <script type = "text/javascript">
 var xmlHttp=createXmlHttpObject();
-var timeoutValue = 1000;
+var timeoutValue = 500;
 var tempPref = 0;
 var pageNew=0;
 function createXmlHttpObject(){
@@ -170,6 +170,7 @@ function response(){
 			message = xmldoc[0].firstChild.nodeValue;
 			document.getElementById("servopos").innerHTML=message;
 		}
+          var tElement;
 		 // Timer Value Data
         xmldoc = xmlResponse.getElementsByTagName("CTIMEREM");
         if(xmldoc.length >0 ) //Check for valid response
@@ -182,8 +183,32 @@ function response(){
         if(xmldoc.length >0 ) //Check for valid response
 		{
             message = xmldoc[0].firstChild.nodeValue;
-            document.getElementById("cstep").value = message;
+            tElement = document.getElementById("cstep");
+            if (document.activeElement != tElement)
+            {
+              document.getElementById("cstep").value = message;
+	    }
         }
+	xmldoc = xmlResponse.getElementsByTagName("C_MAXSTEPS");
+	if(xmldoc.length >0 ) //Check for valid response
+	{
+		message = xmldoc[0].firstChild.nodeValue;
+                tElement = document.getElementById("min0");
+                if (document.activeElement != tElement)
+                {
+		  document.getElementById("maxsteps").value = message;
+		}
+	}
+	xmldoc = xmlResponse.getElementsByTagName("C_STEP_TIME");
+	if(xmldoc.length >0 ) //Check for valid response
+	{
+		message = xmldoc[0].firstChild.nodeValue;
+                tElement = document.getElementById("min0");
+                if (document.activeElement != tElement)
+                {
+		  document.getElementById("configtimestep").value = message;
+		}
+	}
           // Temperature Data check temp preference
         xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
         if(xmldoc.length >0 ) //Check for valid response
@@ -243,7 +268,11 @@ function response(){
 			if(xmldoc.length >0 ) //Check for valid response
 			{
 				message = xmldoc[0].firstChild.nodeValue;
-				document.getElementById("configtimestep").value = message;
+                                tElement = document.getElementById("min0");
+                                if (document.activeElement != tElement)
+                                {
+				  document.getElementById("configtimestep").value = message;
+				}
 			}
 			// thermocouple or thermistor temp
 			xmldoc = xmlResponse.getElementsByTagName("TEMP_SENSOR");
@@ -271,7 +300,7 @@ function TempConfigChanged(){
 		{
 			for(i = 0; i < data.length; i++) {
 				if(data[i].checked){
-					xhttp.open("PUT","TEMP_PREF?VALUE="+data[i].value,true);
+					xhttp.open("POST","TEMP_PREF?VALUE="+data[i].value,true);
 					xhttp.send();
 				}
 			}
@@ -286,7 +315,7 @@ function RedirectChanged(){
 		{
 			for(i = 0; i < data.length; i++) {
 				if(data[i].checked){
-					xhttp.open("PUT","REDIRECT?VALUE="+data[i].value,true);
+					xhttp.open("POST","REDIRECT?VALUE="+data[i].value,true);
 					xhttp.send();
 				}
 			}
@@ -300,7 +329,7 @@ function TempProbeChanged(){
 		{
 			for(i = 0; i < data.length; i++) {
 				if(data[i].checked){
-					xhttp.open("PUT","TEMP_PROBE?VALUE="+data[i].value,true);
+					xhttp.open("POST","TEMP_PROBE?VALUE="+data[i].value,true);
 					xhttp.send();
 				}
 			}
@@ -318,48 +347,48 @@ function NumberInputChanged(element,retstr){
             document.getElementById(element).value=this.responseText;
 		}
         }
-		xhttp.open("PUT",returnString+data,true);
+		xhttp.open("POST",returnString+data,true);
 		xhttp.send();
 	}
 }
 
 function UpdateTempSlider(value){
 	var xhttp = new XMLHttpRequest;
-	timeoutValue = 100 ;
+	timeoutValue = 500 ;
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status ==200) {
 		document.getElementById("servocmd").innerHTML=this.responseText;
 		}
 	}
 	// syntax is really weird
-	xhttp.open("PUT","UPDATE_TEMP_SLIDER?VALUE="+value,true);
+	xhttp.open("POST","UPDATE_TEMP_SLIDER?VALUE="+value,true);
 	xhttp.send();
 }
 
 function UpdateHeatGunSetting(value){
 	var xhttp = new XMLHttpRequest;
-	timeoutValue = 100 ;
+	timeoutValue = 500 ;
 	//xhttp.onreadystatechange = function() {
 	//	if (this.readyState == 4 && this.status ==200) {
 	//	document.getElementById("servocmd").innerHTML=this.responseText;
 	//	}
 	//}
 	// syntax is really weird
-	xhttp.open("PUT","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
+	xhttp.open("POST","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
 	xhttp.send();
 }
 
 
 function UpdateTempSensorSetting(value){
 	var xhttp = new XMLHttpRequest;
-	timeoutValue = 100 ;
+	timeoutValue = 500 ;
 	//xhttp.onreadystatechange = function() {
 	//	if (this.readyState == 4 && this.status ==200) {
 	//	document.getElementById("servocmd").innerHTML=this.responseText;
 	//	}
 	//}
 	// syntax is really weird
-	xhttp.open("PUT","UPDATE_TEMPSENSOR_SLIDER?VALUE="+value,true);
+	xhttp.open("POST","UPDATE_TEMPSENSOR_SLIDER?VALUE="+value,true);
 	xhttp.send();
 }
 
@@ -370,7 +399,7 @@ function ButtonPressEvent(sendstr){
 	if (sendstr == "TEMP_CONFIG_REQ") {
         xhttp.open("GET",sendstr,true);
 	} else {
-		xhttp.open("PUT",sendstr,true);
+		xhttp.open("POST",sendstr,true);
     }
 	xhttp.send();
 	xhttp.onload = function() {
@@ -419,7 +448,7 @@ function processConfig(){
 	if(xmlHttp.readyState==0 || xmlHttp.readyState == 4){
 	var responseType = xmlHttp.responseType;
   
-	    xmlHttp.open("PUT","xml",true);
+	    xmlHttp.open("GET","xmlUpdate",true);
 	    xmlHttp.onreadystatechange=response;
 		xmlHttp.send(null);
 

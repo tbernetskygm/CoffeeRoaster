@@ -12,7 +12,7 @@ void IRAM_ATTR onRoastTimer() {
   {
     Serial.println("onRoastTimer() Timer Stop!!! ");
     timerStop(RoastTimer);
-    timerAlarmDisable(RoastTimer);
+    timerAlarm(RoastTimer, 0 , false,0);
   }
   else
   {
@@ -26,7 +26,12 @@ void IRAM_ATTR onRoastTimer() {
 // turn on the mixer power
 // turn on the heater
 // start the roasting timer
+#ifndef NEW_WIFI
 void ProcessButtonRoastStart() {
+#else
+void ProcessButtonRoastStart(AsyncWebServerRequest *request) {
+#endif
+  char buff[256];
   ROAST = !ROAST;
   rState->doRoast=!rState->doRoast;
   Serial.printf("ProcessButtonRoastStart doRoast %d ROAST= %d MIXPWR %d HEATERPWR %d TIMERSTART %d PREHEAT_TIMERSTART %d\n",
@@ -101,61 +106,140 @@ void ProcessButtonRoastStart() {
     TimerMin0New =0;
     TimerAdjustMin =0;
   }
+#ifndef NEW_WIFI
+  Server.send(200, "text/plain", "ButtonRoastStart"); //Send web page
+  #else
+  request->send(200,"ButtonRoastStart","text/plain");
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessStartPreHeat()
+#else
+void ProcessStartPreHeat(AsyncWebServerRequest *request)
+#endif
 {
   Serial.println("ProcessStartPreHeat() call SetupPreheatTimer ");
   SetupPreheatTimer();
   Serial.println("ProcessStartPreHeat() Done ");
 }
 
+#ifndef NEW_WIFI
 void ProcessMinButton_0() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessMinButton_0(AsyncWebServerRequest *request) {
+  String t_state ;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
   TimerMin0New = t_state.toInt();
-  Serial.print("ProcessMinButton0 TimerMin0 "); Serial.println(TimerMin0);
+  //Serial.print("ProcessMinButton0 TimerMin0 "); Serial.println(TimerMin0);
   //Serial.print("ProcessMinButton0 TimerMin0New: "); Serial.println(TimerMin0New);
   sprintf(buf, "%d", TimerMin0New);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessSecButton_0() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessSecButton_0(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   TimerSec0New = t_state.toInt();
-  Serial.print("ProcessSecButton0 TimerSec0 "); Serial.println(TimerSec0);
+  //Serial.print("ProcessSecButton0 TimerSec0 "); Serial.println(TimerSec0);
   //Serial.print("ProcessSecButton0 TimerSec0New "); Serial.println(TimerSec0New);
   sprintf(buf, "%d", TimerSec0New);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
 
+#ifndef NEW_WIFI
 void ProcessPreMinButton_0() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessPreMinButton_0(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   PreTimerMinNew = t_state.toInt();
-  Serial.print("ProcessPreMinButton0 PreTimerMin "); Serial.println(PreTimerMin);
-  Serial.print("ProcessPreMinButton0 PreTimerMinNew: "); Serial.println(PreTimerMinNew);
+  //Serial.print("ProcessPreMinButton0 PreTimerMin "); Serial.println(PreTimerMin);
+  //Serial.print("ProcessPreMinButton0 PreTimerMinNew: "); Serial.println(PreTimerMinNew);
   sprintf(buf, "%d", PreTimerMinNew);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessPreSecButton_0() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessPreSecButton_0(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   PreTimerSecNew = t_state.toInt();
   Serial.print("ProcessPreSecButton0 PreTimerSec "); Serial.println(PreTimerSec);
   Serial.print("ProcessPreSecButton0 PreTimerSecNew "); Serial.println(PreTimerSecNew);
 
   //Serial.print("ProcessSecButton0 TimerSec0New "); Serial.println(TimerSec0New);
   sprintf(buf, "%d", PreTimerSecNew);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessPreTempButton() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessPreTempButton(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   PreheatTemp = t_state.toInt();
   Serial.print("ProcessPreTempButton PreheatTemp "); Serial.println(PreheatTemp);
   //Serial.print("ProcessSecButton0 TimerSec0New "); Serial.println(TimerSec0New);
   sprintf(buf, "%d", PreheatTemp);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
   // if config data not loaded,get it
   if (!CONFIG_DATA_LOADED)
     readConfigData();
@@ -164,13 +248,27 @@ void ProcessPreTempButton() {
 }
 
 
+#ifndef NEW_WIFI
 void ProcessFinalTempButton() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessFinalTempButton(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   FinishTemp = t_state.toInt();
   Serial.print("ProcessFinalTempButton FinishTemp "); Serial.println(FinishTemp);
   //Serial.print("ProcessSecButton0 TimerSec0New "); Serial.println(TimerSec0New);
   sprintf(buf, "%d", FinishTemp);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
   // if config data not loaded,get it
   if (!CONFIG_DATA_LOADED)
     readConfigData();
@@ -180,38 +278,90 @@ void ProcessFinalTempButton() {
 /**/
 
 
+#ifndef NEW_WIFI
 void ProcessBeanQuantityButton() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessBeanQuantityButton(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
   BeanQuantity = t_state.toInt();
   Serial.print("ProcessBeanQuantityButton BeanQuantity "); Serial.println(BeanQuantity);
   sprintf(buf, "%d", BeanQuantity);
+#ifndef NEW_WIFI
+  
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessCoffeeType() {
   String t_state = Server.arg("VALUE");
-  CoffeeOpt = t_state.toInt();
   String t_text = Server.arg("TEXT");
+#else
+void ProcessCoffeeType(AsyncWebServerRequest *request) {
+  String t_state ;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+  String t_text ;
+  if(request->hasArg("TEXT"))
+    t_text = request->arg("TEXT");
+#endif
+  CoffeeOpt = t_state.toInt();
   CoffeeType=t_text;
-  Serial.print("ProcessCoffeeType CoffeeOpt "); Serial.println(CoffeeOpt);
+  //Serial.print("ProcessCoffeeType CoffeeOpt "); Serial.println(CoffeeOpt);
 
-  Serial.print("ProcessCoffeeType CoffeeType "); Serial.println(CoffeeType);
+  //Serial.print("ProcessCoffeeType CoffeeType "); Serial.println(CoffeeType);
   sprintf(buf, "Opt %d Type %s text %s", CoffeeOpt, CoffeeType,t_text);
+#ifndef NEW_WIFI
+  
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  request->send(200,buf_p,"text/plain");
+  #endif
 }
 
 
+#ifndef NEW_WIFI
 void ProcessRoastSettingsButton() {
   String t_state = Server.arg("VALUE");
+#else
+void ProcessRoastSettingsButton(AsyncWebServerRequest *request) {
+  String t_state ;
+  char buf[64];
+  char * buf_p = &buf[0];
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
   Serial.print("ProcessRoastSettingsButton using RoastLogData: "); Serial.println(t_state);
   sprintf(buf, "{ \"Using data From Log\": 0 }");
+#ifndef NEW_WIFI
   Server.send(200, "application/json", buf); //Send web page
+  #else
+  request->send(200,buf_p,"text/plain");
+  #endif
   parseRoastData(t_state);
 }
 
 
+#ifndef NEW_WIFI
 void UpdateSlider() {
   String t_state = Server.arg("VALUE");
+#else
+void UpdateSlider(AsyncWebServerRequest *request) {
+  String t_state ;
+  if(request->hasArg("VALUE"))
+    t_state = request->arg("VALUE");
+#endif
 
   // convert the string sent from the web page to an int
   FanSpeed = t_state.toInt();
@@ -222,27 +372,53 @@ void UpdateSlider() {
   sprintf(buf, buf);
 
   // now send it back
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
 
 }
 
+#ifndef NEW_WIFI
 void ProcessButtonMixPwr() {
+#else
+void ProcessButtonMixPwr(AsyncWebServerRequest *request) {
+#endif
   MIXPWR = !MIXPWR;
   rState->mixerpwr = !rState->mixerpwr;
   digitalWrite(PIN_MIX_POWER_ENABLE, rState->mixerpwr);
   Serial.print("Button 0 Mixer Power "); Serial.println(rState->mixerpwr);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+  #else
+  if (request)
+    request->send(200,"MixerPowerButton","text/plain");
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessButtonMixDir() {
+#else
+void ProcessButtonMixDir(AsyncWebServerRequest *request) {
+#endif
   MIXDIR = !MIXDIR;
   digitalWrite(PIN_MIXER_DIR, MIXDIR);
   Serial.print("Button 1 Mixer Direction "); Serial.println(MIXDIR);
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+  #else
+  request->send(200,"Mixer Direction","text/plain");
+  #endif
 }
 
 // If using SSR logic is reversed 1 turns off
+#ifndef NEW_WIFI
 void ProcessButtonHeaterPwr() {
+#else
+void ProcessButtonHeaterPwr(AsyncWebServerRequest *request) {
+#endif
   HEATERPWR = !HEATERPWR;
   rState->heaterpwr = !rState->heaterpwr;
   digitalWrite(PIN_HEATER_POWER_ENABLE, rState->heaterpwr);
@@ -253,10 +429,19 @@ void ProcessButtonHeaterPwr() {
   } else {
    Serial.print("Button 0 Heater Power is OFF "); Serial.println(rState->heaterpwr);
   }
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+  #else
+  if (request)
+    request->send(200,"HeaterPower","text/plain");
+  #endif
 }
 
+#ifndef NEW_WIFI
 void ProcessButtonTimerStart() {
+#else
+void ProcessButtonTimerStart(AsyncWebServerRequest *request) {
+#endif
   rState->timerStart = !rState->timerStart;
   //digitalWrite(PIN_RELAY_MIXER_DIR, MIXDIR);
   // if 1 start timer
@@ -266,7 +451,7 @@ void ProcessButtonTimerStart() {
     // get the timer start value
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     TimerValue = TimerStartValue;
-    timerAlarmEnable(RoastTimer);
+    //timerAlarm(RoastTimer,TimerValue, false,0);
     //Set servo positions
     PreheatServoPos=getServoPos(PreheatTemp);
     FinishServoPos=getServoPos(FinishTemp);
@@ -277,6 +462,7 @@ void ProcessButtonTimerStart() {
     rState->first=true;
     rState->roast=true;
     Serial.printf("Button Timer Start Roast TimerValue %d \n",TimerValue);
+    timerAlarm(RoastTimer,1000000,true,0);
     timerStart(RoastTimer);
   }
   else
@@ -290,31 +476,54 @@ void ProcessButtonTimerStart() {
     rState->roast=false;
     Serial.printf("Button Timer  Stop timer %d\n",rState->timerStart);
   }
-  
+#ifndef NEW_WIFI  
   Server.send(200, "text/plain", ""); //Send web page
+#else
+  request->send(200, "TimerStart", "text/plain"); //Send web page
+#endif
 }
 
 // Add 1 minute to roast timer
+#ifndef NEW_WIFI
 void ProcessButtonTimerAdd() {
+#else
+void ProcessButtonTimerAdd(AsyncWebServerRequest *request) {
+#endif
   TimerValue = TimerValue + 60;
   TimerMin0New +=1;
   TimerAdjustMin +=1;
   TimerAdjust = true;
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+#else
+  request->send(200,"TimerAdd", "text/plain"); //Send web page
+#endif
 }
 
 // Subtract 1 minute from roast timer
+#ifndef NEW_WIFI
 void ProcessButtonTimerSub() {
+#else
+void ProcessButtonTimerSub(AsyncWebServerRequest *request) {
+#endif
   TimerValue = TimerValue - 60;
   TimerMin0New -=1;
   TimerAdjustMin -=1;
   if (TimerValue < 0)
 	  TimerValue=0;
   TimerAdjust = true;
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+#else
+  request->send(200,"TimerSub", "text/plain"); //Send web page
+#endif
 }
 
+#ifndef NEW_WIFI
 void ProcessPreheatTimerStart() {
+#else
+void ProcessPreheatTimerStart(AsyncWebServerRequest *request) {
+#endif
   PREHEAT_TIMERSTART = !PREHEAT_TIMERSTART;
   rState->preheatTimerStart=!rState->preheatTimerStart;
   Serial.printf("ProcessPreheatTimerStart  %d\n",rState->preheatTimerStart);
@@ -342,7 +551,7 @@ void ProcessPreheatTimerStart() {
       SetupPreheatTimer();
       rState->preheat=true;
       if (rState->heaterpwr)
-	ProcessButtonHeaterPwr();
+	      ProcessButtonHeaterPwr();
 
       // if not doing a full roast call ProcessButtonMixPwr() to start mixer
       if (!rState->doRoast)
@@ -351,13 +560,17 @@ void ProcessPreheatTimerStart() {
       servoPosNew=PreheatServoPos;
       PreheatTimerValue = PreheatTimerStartValue;
       Serial.print("ProcessPreheatTimerStart Preheat Starting Timer: "); Serial.println(PreheatTimerStartValue);
-      timerAlarmEnable(UtilTimer);
+      timerAlarm(UtilTimer,1000000,true,0);
       timerStart(UtilTimer);
     } else {
       Serial.print("ProcessPreheatTimerStart Preheat Timer Not SET!: "); Serial.println(PreheatTimerStartValue);
       rState->preheatTimerStart=false;
       rState->preheat=false;
+#ifndef NEW_WIFI
       Server.send(200, "text/plain", "Timer Not Set"); //Send web page
+#else
+      request->send(200,"Preheat Timer Not Set", "text/plain"); //Send web page
+#endif
     }
   }
   else
@@ -377,7 +590,11 @@ void ProcessPreheatTimerStart() {
     Serial.print("ProcessPreheatTimerStart Preheat Timer Button  Stop timer"); Serial.println(rState->preheatTimerStart);
   }
   
+#ifndef NEW_WIFI
   Server.send(200, "text/plain", ""); //Send web page
+#else
+  request->send(200,"PreheatTimerStart", "text/plain"); //Send web page
+#endif
 }
 
 String SetRoastFilename()
@@ -394,8 +611,10 @@ String SetRoastFilename()
 void SetupRoastingLog(bool onlyPreheat)
 {
   String fileName;
-  //char buff[64]= {'\0'};
-  char * cdata_p=&buff[0];
+  //char buff[512]= {'\0'};
+  //char buf[64] = {'\0'};
+  String fileData="{\n\t\"Roasting Log Date\": ";
+  //char * cdata_p=&buff[0];
   RoastLogFile=SetRoastFilename();
   rState->fileName=RoastLogFile;
   fileName=RoastLogFile;
@@ -410,92 +629,105 @@ void SetupRoastingLog(bool onlyPreheat)
     deleteFile(fileName.c_str());
   }
   Serial.printf("SetupRoastingLog file name : %s\n",fileName.c_str());
-  sprintf(buff, "\0");
-  sprintf(buf, "{\n\t\"Roasting Log Date\": ");
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //sprintf(buff, "\0");
+  //sprintf(buf, "{\n\t\"Roasting Log Date\": ");
+  //strcat(buff,buf);
+  ///WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
  
-  Serial.printf("SetupRoastingLog get_date buf length %d\n",strlen(buf));
-  sprintf(buf, "\"%s\",\n",get_date_string().c_str());
-  strcat(buff,buf);
-  
+  //Serial.printf("SetupRoastingLog get_date buf length %d\n",strlen(buf));
+  //sprintf(buf, "\"%s\",\n",get_date_string().c_str());
+  //strcat(buff,buf);
+  fileData += get_date_string();
   if (onlyPreheat)
   {
-    sprintf(buf, "\t\"*** Preheat Only ***\",\n");
-    strcat(buff,buf);
+    //sprintf(buf, "\t\"*** Preheat Only ***\",\n");
+    fileData += "\t\"*** Preheat Only ***\",\n";
+    //strcat(buff,buf);
   }
 
-  sprintf(buf, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
-  strcat(buff,buf);
+  //sprintf(buf, "\t\"Bean Quantity (ounces)\": %d,\n",BeanQuantity);
+  fileData += "\t\"Bean Quantity (ounces)\": " + String(BeanQuantity) + ".\n";
+  //strcat(buff,buf);
 
-  Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
-  sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType.c_str());
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog Coffee Type <%s>\n",CoffeeType);
+  //sprintf(buf, "\t\"Coffee Type\": \"%s\",\n",CoffeeType.c_str());
+  fileData += "\t\"Coffee Type\": \"" + CoffeeType + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  sprintf(buf, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
-  strcat(buff,buf);
-  Serial.printf("** buff size %d\n",strlen(buff));
+  //sprintf(buf, "\t\"Coffee Opt\": %d,\n",CoffeeOpt);
+  fileData += "\t\"Coffee Opt\": " + String(CoffeeOpt) + ",\n";
+  //strcat(buff,buf);
+  //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog preheat time %d\n",PreheatTimerStartValue);
-  sprintf(buf, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog preheat time %d\n",PreheatTimerStartValue);
+  //sprintf(buf, "\t\"Preheat Time (sec)\": %d,\n",PreheatTimerStartValue);
+  fileData += "\t\"Preheat Time (sec)\": " + String(PreheatTimerStartValue) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog preheat temp %d\n",PreheatTemp);
-  sprintf(buf, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog preheat temp %d\n",PreheatTemp);
+  //sprintf(buf, "\t\"Preheat Temp %s \": %d,\n",tempType.c_str(),PreheatTemp);
+  fileData += "\t\"Preheat Temp " + tempType + "\": " + String(PreheatTemp) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  sprintf(buf, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //sprintf(buf, "\t\"Preheat Servo Pos\": %d,\n",PreheatServoPos);
+  fileData += "\t\"Preheat Servo Pos\": " + String(PreheatServoPos) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog Roast time %d\n",TimerStartValue);
-  sprintf(buf, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog Roast time %d\n",TimerStartValue);
+  //sprintf(buf, "\t\"Roast Time (sec)\": %d,\n",TimerStartValue);
+  fileData += "\t\"Roast Time (sec)\": " + String(TimerStartValue) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog final temp\n");
-  sprintf(buf, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog final temp\n");
+  //sprintf(buf, "\t\"Finish Temp %s \": %d,\n",tempType.c_str(),FinishTemp);
+  fileData += "\t\"Finish Temp " + tempType + " \": " + String(FinishTemp) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+   // Serial.printf("** buff size %d\n",strlen(buff));
 
-  sprintf(buf, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //sprintf(buf, "\t\"Finish Servo Pos\": %d,\n",FinishServoPos);
+  fileData += "\t\"Finish Servo Pos\": " + String(FinishServoPos) + ",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
-  sprintf(buf, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
-  strcat(buff,buf);
-  WHENDEBUG(5)
-    Serial.printf("** buff size %d\n",strlen(buff));
+  //Serial.printf("SetupRoastingLog Configuration Date <%s>\n",Configuration_Date.c_str());
+  //sprintf(buf, "\t\"Temp Config File Date\": \"%s\",\n",Configuration_Date.c_str());
+  fileData += "\t\"Temp Config File Date\": \"" + Configuration_Date + "\",\n";
+  //strcat(buff,buf);
+  //WHENDEBUG(5)
+    //Serial.printf("** buff size %d\n",strlen(buff));
 
-  Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
+  //Serial.printf("SetupRoastingLog set heatgun speed %d\n",HEATGUNHIGH);
   if (HEATGUNHIGH == 1)
   {
-    sprintf(buf, "\t\"Heatgun Speed\": \"High\",\n");
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "\t\"Heatgun Speed\": \"High\",\n");
+    fileData += "\t\"Heatgun Speed\": \"High\",\n";
+    //strcat(buff,buf);
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
   }
   else
   {
-    sprintf(buf, "\t\"Heatgun Speed\": \"Low\",\n");
-    strcat(buff,buf);
-    WHENDEBUG(5)
-      Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf, "\t\"Heatgun Speed\": \"Low\",\n");
+    fileData += "\t\"Heatgun Speed\": \"Low\",\n";
+    //strcat(buff,buf);
+    //WHENDEBUG(5)
+      //Serial.printf("** buff size %d\n",strlen(buff));
   }
-  writeFile(fileName.c_str(), cdata_p);
-  
+  //writeFile(fileName.c_str(), cdata_p);
+  writeFile(fileName.c_str(), fileData);
   Serial.printf("SetupRoastingLog done\n");
 }
 
@@ -503,52 +735,61 @@ void SetupRoastingLog(bool onlyPreheat)
 void CloseRoastingLog(bool manualStop)
 {
   String fileName;
-  char buff[128]= {'\0'};
-  char * cdata_p=&buff[0];
-  Serial.printf("--- CloseRoastingLog ---\n");
+  String fileData;
+  //char buff[128]= {'\0'};
+  //char * cdata_p=&buff[0];
+  //Serial.printf("--- CloseRoastingLog ---\n");
   fileName=RoastLogFile;
   if (manualStop)
   {
-    Serial.printf("--- Manual Stop ---\n");
+    //Serial.printf("--- Manual Stop ---\n");
     // Stopped manually for some reason
-    sprintf(buf,"\t],\n"); // close roast_steps array
-    strcat(buff,buf);
+    //sprintf(buf,"\t],\n"); // close roast_steps array
+    //strcat(buff,buf);
+    fileData += "\t],\n"; // close roast_steps array
     //Serial.printf("** buff size %d\n",strlen(buff));
-    sprintf(buf, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
-    strcat(buff,buf);
+    //sprintf(buf, "\t\"Roasting was stopped manually at\": \"%s\"",get_date_string().c_str());
+    //strcat(buff,buf);
+    fileData += "\t\"Roasting was stopped manually at\": \"" + get_date_string() + "\"";
     //Serial.printf("** buff size %d\n",strlen(buff));
     if (TimerAdjust)
     {
-      sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
-      strcat(buff,buf);
+      //sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
+      //strcat(buff,buf);
+      fileData += ",\n\t\"Roast time adjustment\": " + String(TimerAdjustMin) + "\n";
       //Serial.printf("** buff size %d\n",strlen(buff));
     }
     // close the json string
-    sprintf(buf,"\n}\n");
-    strcat(buff,buf);
+    //sprintf(buf,"\n}\n");
+    //strcat(buff,buf);
+    fileData += "\n}\n";
     //Serial.printf("** buff size %d\n",strlen(buff));
   }
   else
   {
     // stopped because roasting was finished
     // this closes roast_steps array "]" and then the json with "}"
-    sprintf(buf,"\n\t]");
-    strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf,"\n\t]");
+    //strcat(buff,buf);
+    fileData += "\n\t]";
+    //Serial.printf("** buff size %d\n",strlen(buff));
     if (TimerAdjust)
     {
-      sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
-      strcat(buff,buf);
-      Serial.printf("** buff size %d\n",strlen(buff));
+      //sprintf(buf, ",\n\t\"Roast time adjustment\": %d\n",TimerAdjustMin);
+      //strcat(buff,buf);
+      //Serial.printf("** buff size %d\n",strlen(buff));
+      fileData += ",\n\t\"Roast time adjustment\": " + String(TimerAdjustMin) + "\n";
     }
-    sprintf(buf, ",\t\"Roasting Finished at\": \"%s\"",get_date_string().c_str());
-    strcat(buff,buf);
+    //sprintf(buf, ",\t\"Roasting Finished at\": \"%s\"",get_date_string().c_str());
+    //strcat(buff,buf);
+    fileData += ",\t\"Roasting Finished at\": \"" + get_date_string() + "\"";
     // close the json string
-    sprintf(buf,"}\n");
-    strcat(buff,buf);
-    Serial.printf("** buff size %d\n",strlen(buff));
+    //sprintf(buf,"}\n");
+    //strcat(buff,buf);
+    fileData += "}\n";
+    //Serial.printf("** buff size %d\n",strlen(buff));
   }
-  appendFile(fileName.c_str(), cdata_p);
+  appendFile(fileName.c_str(), fileData);
 
 }
 
@@ -616,8 +857,9 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
   // but it broke the logging stuff Didn't put in the 
   // "preheat_steps":[  or "roast_steps":[ t
   String fileName;
-  //char buff[256]= {'\0'};
-  char * cdata_p=&buff[0];
+  //char buff[128]= {'\0'};
+  //char * cdata_p=&buff[0];
+  String fileData;
   static bool endPreheat=false;
   int buflen=0;
   int t=0;
@@ -625,19 +867,19 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
   {
     if(xSemaphoreTake(roastTimerSemaphore, 0) == pdTRUE)
     {
-      WHENDEBUG(1)
-      {
-        Serial.printf("---UpdateRoastState Semaphore taken\n");
-        Serial.printf("---UpdateRoastState file: %s doRoast %d roast %d first %d last %d preheat %d stop %d TimerValue %d PreheatTimerValue %d tempSamples %d\n",
-		    state->fileName.c_str(),state->doRoast,state->roast,state->first,
-		    state->last,state->preheat,state->stopit,TimerValue,PreheatTimerValue,tempSamples);
-      }
+      //WHENDEBUG(1)
+      //{
+        //Serial.printf("---UpdateRoastState Semaphore taken\n");
+        //Serial.printf("---UpdateRoastState file: %s doRoast %d roast %d first %d last %d preheat %d stop %d TimerValue %d PreheatTimerValue %d tempSamples %d\n",
+		    //state->fileName.c_str(),state->doRoast,state->roast,state->first,
+		    //state->last,state->preheat,state->stopit,TimerValue,PreheatTimerValue,tempSamples);
+      //}
       fileName=state->fileName;//RoastLogFile;
       // things to do when timer finishes if not in preheat mode
       if(state->roast && TimerValue <=0)
       {
-        WHENDEBUG(1)
-          Serial.printf("UpdateRoastState STOPPING ROAST time : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
+        //WHENDEBUG(1)
+          //Serial.printf("UpdateRoastState STOPPING ROAST time : %d Servo Pos %d FinishServoPos : %d\n",TimerValue,servoPos,FinishServoPos);
         state->last=true;
         state->timerStart=false;
         tempSamples=10;
@@ -648,8 +890,8 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
       //
       if(state->preheat && PreheatTimerValue <=0)
       {
-        WHENDEBUG(1)
-          Serial.printf("UpdateRoastState Preheat done preheat time : %d Servo Pos %d FinishServoPos : %d\n",PreheatTimerValue,servoPos,FinishServoPos);
+        //WHENDEBUG(1)
+          //Serial.printf("UpdateRoastState Preheat done preheat time : %d Servo Pos %d FinishServoPos : %d\n",PreheatTimerValue,servoPos,FinishServoPos);
         state->last=true;
         state->preheatTimerStart=false;
         tempSamples=5;
@@ -668,54 +910,57 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 
       if (TimerValue%tempSamples==0 && state->roast) // dont do update if roast was stopped
       {
-        sprintf(buff, "\0");
-	if (state->roast)
-          WHENDEBUG(1)
-	    Serial.printf(" UpdateRoastState time  : %d ROASTing: %d preheat %d \n",TimerValue,state->roast, state->preheat);
+        //sprintf(buff, "\0");
+	      //if (state->roast)
+          //WHENDEBUG(1)
+	        //Serial.printf(" UpdateRoastState time  : %d ROASTing: %d preheat %d \n",TimerValue,state->roast, state->preheat);
       }
 
       if (PreheatTimerValue%tempSamples==0 && state->preheat) // dont do update if roast was stopped
       {
-        sprintf(buff, "\0");
-	if (state->preheat)
-          WHENDEBUG(1)
-	    Serial.printf(" UpdateRoastState time  : %d PREHEATing: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
+        //sprintf(buff, "\0");
+	      //if (state->preheat)
+          //WHENDEBUG(1)
+	          //Serial.printf(" UpdateRoastState time  : %d PREHEATing: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
       }
 
       if ((TimerValue%tempSamples==0 && state->roast)|| 
 	(PreheatTimerValue%tempSamples == 0 && state->preheat)) // dont do update if roast was stopped
       {
-	if (state->roast)
-          WHENDEBUG(1)
-	    Serial.printf(" UpdateRoastState time  : %d ROAST: %d preheat %d \n",TimerValue,state->roast, state->preheat);
-	if (state->preheat)
-          WHENDEBUG(1)
-	    Serial.printf(" UpdateRoastState time  : %d PREHEAT: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
+	      //if (state->roast)
+          //WHENDEBUG(1)
+	          //Serial.printf(" UpdateRoastState time  : %d ROAST: %d preheat %d \n",TimerValue,state->roast, state->preheat);
+	      //if (state->preheat)
+          //WHENDEBUG(1)
+	        //Serial.printf(" UpdateRoastState time  : %d PREHEAT: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
   
-        sprintf(buff, "\0");
+        //sprintf(buff, "\0");
         if (state->preheat)//PREHEAT)
         {
-          WHENDEBUG(1)
-            Serial.printf("Preheat steps\n");
+          //WHENDEBUG(1)
+            //Serial.printf("Preheat steps\n");
           // This starts the preheat_steps array
           if(!state->roast && state->first){
 	          state->first=false;
-            sprintf(buf, "\t\"preheat_steps\": [\n");
-            strcat(buff,buf);
-            WHENDEBUG(5)
-              Serial.printf("** buff size %d\n",strlen(buff));
-            Serial.printf("** First Preheat step *** buf size %d\n",strlen(buff));
-            buflen+=strlen(buff);
+            //sprintf(buf, "\t\"preheat_steps\": [\n");
+            //strcat(buff,buf);
+	    fileData = "\t\"preheat_steps\": [\n";
+            //WHENDEBUG(5)
+              //Serial.printf("** buff size %d\n",strlen(buff));
+            //Serial.printf("** First Preheat step *** buf size %d\n",strlen(buff));
+            //buflen+=strlen(buff);
           }
-          sprintf(buf, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
-          strcat(buff,buf);
-          WHENDEBUG(5)
-            Serial.printf("** buff size %d\n",strlen(buff));
-          buflen+=strlen(buf);
+          //sprintf(buf, "\t{\n\t\t\"PREHEAT_TIME\": %d,\n", PreheatTimerValue);
+          //strcat(buff,buf);
+	  fileData += "\t{\n\t\t\"PREHEAT_TIME\": " + String(PreheatTimerValue) + ",\n";
+          //WHENDEBUG(5)
+            //Serial.printf("** buff size %d\n",strlen(buff));
+          //buflen+=strlen(buf);
           // this gets added to each entry
 
-          sprintf(buf, "\t\t\"SETTMP\": %d,\n", PreheatTemp);
-          strcat(buff,buf);
+          //sprintf(buf, "\t\t\"SETTMP\": %d,\n", PreheatTemp);
+          //strcat(buff,buf);
+          fileData += "\t\t\"SETTMP\": " + String(PreheatTemp) + ",\n";
         } 
         else if (state->roast)//ROAST) 
         {
@@ -723,116 +968,127 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
           if (state->roast && state->first )
           {
 	          state->first=false;
-            WHENDEBUG(1)
-              Serial.printf("** First Roast step ***\n");
-            sprintf(buf, "\n\t\"roast_steps\": [\n");
-            strcat(buff,buf);
-            WHENDEBUG(5)
-              Serial.printf("** buff size %d\n",strlen(buff));
+            //WHENDEBUG(1)
+              //Serial.printf("** First Roast step ***\n");
+            //sprintf(buf, "\n\t\"roast_steps\": [\n");
+            //strcat(buff,buf);
+            fileData += "\n\t\"roast_steps\": [\n";
+            //WHENDEBUG(5)
+              //Serial.printf("** buff size %d\n",strlen(buff));
           }
-          sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-          strcat(buff,buf);
+          //sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+          //strcat(buff,buf);
+          fileData += "\t{\n\t\t\"ROAST_TIME\": " + String(TimerValue) + ",\n";
           // this gets added to each entry
-          sprintf(buf, "\t\t\"SETTMP\": %d,\n", FinishTemp);
-          strcat(buff,buf);
-          WHENDEBUG(5)
-            Serial.printf("** buff size %d\n",strlen(buff));
+          //sprintf(buf, "\t\t\"SETTMP\": %d,\n", FinishTemp);
+          //strcat(buff,buf);
+          fileData += "\t\t\"SETTMP\": " + String(FinishTemp) + ",\n";
+          //WHENDEBUG(5)
+            //Serial.printf("** buff size %d\n",strlen(buff));
         }
         else if (state->stopit)
         {
           // If stopped in the middle add one more of these to 
           // make json file valid 
-          sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-          strcat(buff,buf);
+          //sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
+          //strcat(buff,buf);
+          fileData += "\t{\n\t\t\"ROAST_TIME\": " + String(TimerValue) + ",\n";
 
-          WHENDEBUG(5)
-            Serial.printf("** buff size %d\n",strlen(buff));
+          //WHENDEBUG(5)
+            //Serial.printf("** buff size %d\n",strlen(buff));
         }
         // this gets added to each entry
-        sprintf(buf, "\t\t\"TMPF\": %.2f,\n", tempF);
-        strcat(buff,buf);
-        WHENDEBUG(5)
-          Serial.printf("** buff size %d\n",strlen(buff));
-        buflen+=strlen(buf);
+        //sprintf(buf, "\t\t\"TMPF\": %.2f,\n", tempF);
+        //strcat(buff,buf);
+        fileData += "\t\t\"TMPF\": " + String(tempF) + ",\n";
+        //WHENDEBUG(5)
+          //Serial.printf("** buff size %d\n",strlen(buff));
+        //buflen+=strlen(buf);
    
-        sprintf(buf, "\t\t\"TMPC\": %.2f,\n", tempC);
-        strcat(buff,buf);
-        WHENDEBUG(5)
-          Serial.printf("** buff size %d\n",strlen(buff));
-        buflen+=strlen(buf);
+        //sprintf(buf, "\t\t\"TMPC\": %.2f,\n", tempC);
+        //strcat(buff,buf);
+        fileData += "\t\t\"TMPC\": " + String(tempC) + ",\n";
+        //WHENDEBUG(5)
+          //Serial.printf("** buff size %d\n",strlen(buff));
+        //buflen+=strlen(buf);
    
-        sprintf(buf, "\t\t\"POS\": %d\n", servoPos);
-        strcat(buff,buf);
-        WHENDEBUG(5)
-          Serial.printf("** buff size %d\n",strlen(buff));
-        buflen+=strlen(buf);
+        //sprintf(buf, "\t\t\"POS\": %d\n", servoPos);
+        //strcat(buff,buf);
+        fileData += "\t\t\"POS\": " + String(servoPos) + "\n";
+        //WHENDEBUG(5)
+          //Serial.printf("** buff size %d\n",strlen(buff));
+        //buflen+=strlen(buf);
    
-        sprintf(buf, "\t}");
-        strcat(buff,buf);
-        WHENDEBUG(5)
-          Serial.printf("** buff size %d\n",strlen(buff));
-        buflen+=strlen(buf);
+        //sprintf(buf, "\t}");
+        //strcat(buff,buf);
+        fileData += "\t}";
+        //WHENDEBUG(5)
+          //Serial.printf("** buff size %d\n",strlen(buff));
+        //buflen+=strlen(buf);
   
         // put in a comma before next entry 
         if ( !state->last )
         {
-          WHENDEBUG(1)
-            Serial.printf("UpdateRoastState adding comma file first %d endPreheat %d last %d\n",
-		      state->first,endPreheat,state->last);
-          sprintf(buf, ",\n");
-          strcat(buff,buf);
-          buflen+=strlen(buf);
-          WHENDEBUG(1)
-            Serial.printf("** buff size %d\n",strlen(buff));
+          //WHENDEBUG(1)
+            //Serial.printf("UpdateRoastState adding comma file first %d endPreheat %d last %d\n",
+		        //state->first,endPreheat,state->last);
+          //sprintf(buf, ",\n");
+          //strcat(buff,buf);
+          //buflen+=strlen(buf);
+          fileData += ",\n";
+          //WHENDEBUG(1)
+            //Serial.printf("** buff size %d\n",strlen(buff));
         }
         else if (state->preheat && state->last)
         {
-          WHENDEBUG(1)
-            Serial.printf("UpdateRoastState last preheat step roast %d endPreheat %d last %d\n",
-		       state->roast,endPreheat,state->last);
+          //WHENDEBUG(1)
+            //Serial.printf("UpdateRoastState last preheat step roast %d endPreheat %d last %d\n",
+		         //state->roast,endPreheat,state->last);
 	  if (state->doRoast)
 	  {
 	    state->preheat=false;
 	    state->last=false;
 	  }
-          sprintf(buf, "\n\t],\n");
-          strcat(buff,buf);
-          WHENDEBUG(1)
-            Serial.printf("** buff size %d\n",strlen(buff));
-          buflen+=strlen(buf);
+          //sprintf(buf, "\n\t],\n");
+          //strcat(buff,buf);
+          fileData += "\n\t],\n";
+          //WHENDEBUG(1)
+            //Serial.printf("** buff size %d\n",strlen(buff));
+          //buflen+=strlen(buf);
 
         } 
         else 
         {
-          WHENDEBUG(1)
-            Serial.printf("UpdateRoastState adding newline only file first %d endPreheat %d last %d\n",
-		       state->first,endPreheat,state->last);
+          //WHENDEBUG(1)
+            //Serial.printf("UpdateRoastState adding newline only file first %d endPreheat %d last %d\n",
+		        //state->first,endPreheat,state->last);
           //sprintf(buff, " first %d last %d\n", state->first,state->last);
-          sprintf(buf, "\n");
-          strcat(buff,buf);
-          WHENDEBUG(1)
-            Serial.printf("** buff size %d\n",strlen(buff));
-          buflen+=strlen(buf);
+          //sprintf(buf, "\n");
+          //strcat(buff,buf);
+          fileData += "\n";
+          //WHENDEBUG(1)
+            //Serial.printf("** buff size %d\n",strlen(buff));
+          //buflen+=strlen(buf);
         }
   
-        WHENDEBUG(1)
-          Serial.printf("UpdateRoastState total buffer length %d\n",buflen);
-        WHENDEBUG(1)
-          Serial.printf("** buff size %d\n",strlen(buff));
+        //WHENDEBUG(1)
+          //Serial.printf("UpdateRoastState total buffer length %d\n",buflen);
+        //WHENDEBUG(1)
+          //Serial.printf("** buff size %d\n",strlen(buff));
 	buflen=0;
         if (state->fileName.length() > 0)
-          appendFile(fileName.c_str(), cdata_p);
+          appendFile(fileName.c_str(), fileData);
 	// Turn off stuff when done
 	if(state->doRoast && state->roast && state->last)
 	{
-          WHENDEBUG(1)
-            Serial.printf("UpdateRoastState Should be done roasting!\n");
+          //WHENDEBUG(1)
+            //Serial.printf("UpdateRoastState Should be done roasting!\n");
 	  SetMachineState();
 	}
 	else if(!state->doRoast && state->preheat && state->last)
 	{
-          WHENDEBUG(1)
-            Serial.printf("UpdateRoastState Should be done PREHEAT only!\n");
+          //WHENDEBUG(1)
+            //Serial.printf("UpdateRoastState Should be done PREHEAT only!\n");
 	  SetMachineState();
 	}
       } // end of update to roasting log
@@ -845,13 +1101,13 @@ void SetupRoastTimer()
 {
   //timerDetachInterrupt(UtilTimer); // this causes exception
  // Setup for timer timer 0 prescaler 80 count up (true)
-  RoastTimer = timerBegin(0, 80, true);
+  RoastTimer = timerBegin(1000000);
   // Attach to interrupt handler
-  timerAttachInterrupt(RoastTimer, &onRoastTimer , true);
+  timerAttachInterrupt(RoastTimer, &onRoastTimer );
   //Specify timer timeout value
   // 1000000 microseconds = 1 second
-  timerAlarmWrite(RoastTimer, 1000000, true);
-  Serial.println("setupRoastTimer() ");
+  //timerWrite(RoastTimer, 1000000, true);
+  Serial.println("SetupRoastTimer() ");
 }
 
 
@@ -861,7 +1117,7 @@ void ClearRoastTimer()
   if (RoastTimer)
   {
     timerStop(RoastTimer);
-    timerAlarmDisable(RoastTimer);
+    timerAlarm(RoastTimer,0,false,0); //Does this disable it?
     // Detach to interrupt handler
     timerDetachInterrupt(RoastTimer);
   }

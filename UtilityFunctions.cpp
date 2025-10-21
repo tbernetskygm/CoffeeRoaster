@@ -4,6 +4,63 @@
 #include<ArduinoJson.h>
 #include <time.h>
 #include "FileSystemFunctions.h"
+
+#ifdef NEW_WIFI
+//#include <WiFi.h>
+//#include <WiFiManager.h>
+
+/*
+// initialize WiFi using WiFi Manager
+bool initWiFi() {
+  if (ssid=="" || ip == ""){
+    Serial.printf("Undefined SSID or IP address.\n");
+    return false;
+  }
+  // attempt to connect using saved settings, on fail fallback to AP config portal
+    if(!WiFi.enableSTA(true)){
+      // handle failure mode Brownout detector etc.
+      //#ifdef WM_DEBUG_LEVEL
+      Serial.println("[FATAL] Unable to enable wifi!"));
+      //#endif
+      return false;
+    } 
+    else 
+    {
+      Serial.println("Enabled wifi! in STA MODE"));
+    }
+  WiFi.mode(WIFI_STA);
+  localIP.fromString(ip.c_str());
+  localGateway.fromString(gateway.c_str());
+  if (!WiFi.config(localIP, localGateway, subnet)){
+    Serial.printf("STA Failed to configure\n");
+    return false;
+  }
+  WiFi.begin(ssid.c_str(), pass.c_str());
+  Serial.printf("Connecting to Wifi SSID: %s pass %s ...\n",ssid.c_str(),pass.c_str());
+  unsigned long currentMillis = millis();
+  previousMillis = currentMillis;
+  Serial.printf(" Current Wifi Status: %d \n",WiFi.status());
+  while(WiFi.status() != WL_CONNECTED) {
+    currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+      Serial.printf("Failed to connect!\n");
+      return false;
+    }
+    Serial.printf(" Current Wifi Status: %d \n",WiFi.status());
+    WiFi.disconnect();
+    delay(1000);
+    //WiFi.begin(ssid.c_str(), pass.c_str());
+    //Serial.printf("Trying again Connecting to Wifi SSID: %s ...\n",ssid.c_str());
+  }
+  Serial.print("WiFi connected Using IP= ");
+  Serial.println(WiFi.localIP());
+  Serial.printf("WiFi status %d\n",WiFi.status());
+  Serial.printf("WiFi signal strength %d\n",WiFi.RSSI());
+  return true;
+}
+*/
+#endif
+
 String get_timer_string(int value)
 {
   char  tmpstr[40];
@@ -61,8 +118,8 @@ String get_temp_string() {
   if ( tempC < 0)
   {
   // for testing print out data
-  Serial.printf("ADC value :%d,\tVoltage : %.2fV, \tTempC : %.2fC \tTempF : %.2fF\n"
-       ,adcValue, voltageTemp,tempC, tempF);
+  //Serial.printf("ADC value :%d,\tVoltage : %.2fV, \tTempC : %.2fC \tTempF : %.2fF\n"
+       //,adcValue, voltageTemp,tempC, tempF);
   }
   return String(tempC);
 }
@@ -75,7 +132,7 @@ String get_date_string() {
   char    dateTime[40];
   if (!getLocalTime(&timeinfo)) 
   {
-    Serial.println("Failed to get local time from NTP!!");
+    //Serial.println("Failed to get local time from NTP!!");
     t = time(NULL);
     tm = localtime(&t);
     
@@ -86,7 +143,7 @@ String get_date_string() {
           tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
           wd[tm->tm_wday],
           tm->tm_hour, tm->tm_min, tm->tm_sec);
-  Serial.printf("get_date_string date :%s\n", dateTime);
+  //Serial.printf("get_date_string date :%s\n", dateTime);
   return String(dateTime);
 
 } 
@@ -98,7 +155,7 @@ String get_short_date_string() {
   char    dateTime[40];
   if (!getLocalTime(&timeinfo)) 
   {
-    Serial.println("Failed to get local time from NTP!!");
+    //Serial.println("Failed to get local time from NTP!!");
     t = time(NULL);
     tm = localtime(&t);
   } else
@@ -107,7 +164,7 @@ String get_short_date_string() {
   sprintf(dateTime, "%04d_%02d_%02d-%02d:%02d.",
           tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
           tm->tm_hour, tm->tm_min);
-  Serial.printf("get_short_date_string date :%s\n", dateTime);
+  //Serial.printf("get_short_date_string date :%s\n", dateTime);
   return String(dateTime);
 } 
 
@@ -115,10 +172,10 @@ String get_short_date_string() {
 double CalcAvgTemp(double temps, int timeval)
 {
   double av=0;
-  Serial.print("CalcAvgTemp temps "); Serial.println(temps);
-  Serial.print("CalcAvgTemp timeval "); Serial.println(timeval);
+  //Serial.print("CalcAvgTemp temps "); Serial.println(temps);
+  //Serial.print("CalcAvgTemp timeval "); Serial.println(timeval);
   av= temps/timeval;
-  Serial.print("CalcAvgTemp avg "); Serial.println(av);
+  //Serial.print("CalcAvgTemp avg "); Serial.println(av);
   return av;
 }
 
@@ -133,7 +190,7 @@ int getServoPos( int temp)
   int pos1;
   int pos2;
   int calcPos=0;
-  Serial.printf("getServoPos temp: %d\n",temp);
+  //Serial.printf("getServoPos temp: %d\n",temp);
   // interpolate config data for servo position 
   if(tempData[0].tempC > 0 )
   {
@@ -156,10 +213,10 @@ int getServoPos( int temp)
     if (temp2 > 0)
     {
       calcPos =((int)( pos1+(pos2-pos1)/(temp2-temp1)*(temp-temp1)));
-      Serial.print(" getServoPos: Calculated servo pos: ");Serial.println(calcPos);
+      //Serial.print(" getServoPos: Calculated servo pos: ");Serial.println(calcPos);
     } else {
       calcPos =0;
-      Serial.printf(" Cannot calculate servo pos temp value too high! %d\n",temp);
+      //Serial.printf(" Cannot calculate servo pos temp value too high! %d\n",temp);
     }
   } else {
 	  Serial.println("Config Data not loaded!!");
@@ -183,23 +240,23 @@ float getTempVal( int pos)
   // interpolate config data for servo position 
   if(tempData[0].tempC > 0 )
   {
-    Serial.print("getTempVal pos "); Serial.println(pos);
+    //Serial.print("getTempVal pos "); Serial.println(pos);
     for ( i = 0; i < SERVO_MAX_STEPS; i++) {
 	  //Serial.print(" getTempVal tempC");Serial.println(tempData[i].tempC);
 	  if ( tempData[i].ServoPosition >= pos){
-		  Serial.print(" Found higher pos: ");Serial.println(tempData[i].ServoPosition);
+		  //Serial.print(" Found higher pos: ");Serial.println(tempData[i].ServoPosition);
 		  temp2=tempData[i].tempC;
-		  Serial.print(" Found higher temp1: ");Serial.println(tempData[i-1].tempC);
+		  //Serial.print(" Found higher temp1: ");Serial.println(tempData[i-1].tempC);
 		  temp1=tempData[i-1].tempC;
-		  Serial.print(" Found servo pos2: ");Serial.println(tempData[i].ServoPosition);
+		  //Serial.print(" Found servo pos2: ");Serial.println(tempData[i].ServoPosition);
 		  pos2=tempData[i].ServoPosition;
-		  Serial.print(" Found servo pos1: ");Serial.println(tempData[i-1].ServoPosition);
+		  //Serial.print(" Found servo pos1: ");Serial.println(tempData[i-1].ServoPosition);
 		  pos1=tempData[i-1].ServoPosition;
 		  break;
 	  }
     }
     calcTemp =(( temp1+(temp2-temp1)/(pos2-pos1)*(pos-pos1)));
-    Serial.print(" Calculated temp : ");Serial.println(calcTemp);
+    //Serial.print(" Calculated temp : ");Serial.println(calcTemp);
   } else {
 	  Serial.println("Config Data not loaded!!");
   }
@@ -221,7 +278,7 @@ void parseRoastData(String jsonData)
   
     // json stuff
     size_t filesize = jsonData.length();
-    Serial.print("parseRoastData - file size : ");Serial.println(filesize);
+    //Serial.print("parseRoastData - file size : ");Serial.println(filesize);
     DeserializationError error;
     error = deserializeJson(jdoc,jsonData);
     if(error) {
@@ -229,7 +286,7 @@ void parseRoastData(String jsonData)
       Serial.println(error.f_str());
       return;
     }
-    Serial.println("parseRoastData First deserializeJson() worked!!");
+    //Serial.println("parseRoastData First deserializeJson() worked!!");
     const char* Roast_Date = jdoc["Roasting Log Date"]; // "1970/01/01(Thr)00:02:01"
     unsigned int cBeanQty = jdoc["Bean Quantity (ounces)"]; // "12"
     unsigned int cPreheatTime = jdoc["Preheat Time (sec)"]; // "12"
@@ -240,8 +297,8 @@ void parseRoastData(String jsonData)
     unsigned int cFinishServoPos = jdoc["Finish Servo Pos"]; // "12"
     const char* HeatGunSpeed = jdoc["Heatgun Speed"]; // "12"
     FinishTemp=cFinishTemp;
-    Serial.printf("parseRoastData FinishTemp %d\n", FinishTemp);
-    Serial.printf("parseRoastData HeatGunSpeed %s\n", HeatGunSpeed);
+    //Serial.printf("parseRoastData FinishTemp %d\n", FinishTemp);
+    //Serial.printf("parseRoastData HeatGunSpeed %s\n", HeatGunSpeed);
 }
 
 void parseJsonFile(String filename)
@@ -253,7 +310,7 @@ void parseJsonFile(String filename)
   double tempF;
   int servoPos;
 
-  Serial.print("parseJsonFile - opening file : ");Serial.println(filename);
+  //Serial.print("parseJsonFile - opening file : ");Serial.println(filename);
   //if (SPIFFS.exists(filename)  )
   //{
   File file = openFile(filename.c_str(),"r"); 
@@ -262,7 +319,7 @@ void parseJsonFile(String filename)
     CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
     return;
   }
-  Serial.print("parseJsonFile - opened file : ");Serial.println(filename);
+  //Serial.print("parseJsonFile - opened file : ");Serial.println(filename);
   
   // json stuff
   size_t filesize = file.size();
@@ -276,13 +333,13 @@ void parseJsonFile(String filename)
     CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
     return;
   }
-  Serial.println("First deserializeJson() worked!!");
+  //Serial.println("First deserializeJson() worked!!");
   file.close();
   const char * ConfigurationDate = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
     // Set Global Variable
-  Serial.printf("UtilityFunctions::parseJsonFile ConfigurationDate = %s\n",ConfigurationDate);
+  //Serial.printf("UtilityFunctions::parseJsonFile ConfigurationDate = %s\n",ConfigurationDate);
     Configuration_Date = ConfigurationDate;
-  Serial.printf("UtilityFunctions::parseJsonFile Configuration_Date = %s\n",Configuration_Date.c_str());
+  //Serial.printf("UtilityFunctions::parseJsonFile Configuration_Date = %s\n",Configuration_Date.c_str());
 
   for (JsonObject step : jdoc["steps"].as<JsonArray>()) {
 
@@ -334,9 +391,9 @@ int adjustTemp(int setPoint)
 
   if ( abs(errVal) > tempTolerance)
   {
-   Serial.print("adjustTemp out of tolerance: "); Serial.println(errVal);
+   //Serial.print("adjustTemp out of tolerance: "); Serial.println(errVal);
    newPos=getServoPos(setPoint+errVal);
-   Serial.print("adjustTemp out of new position: "); Serial.println(newPos);
+   //Serial.print("adjustTemp out of new position: "); Serial.println(newPos);
   }
   tempTotalF=0;
   tempTotalC=0;
@@ -363,8 +420,8 @@ void HandleDevices(void *)
   for(;;)// infinite loop
   {
     //read temps
-    WHENDEBUG(4)
-      Serial.printf("HandleDevices Read Temps\n");
+    //WHENDEBUG(4)
+      //Serial.printf("HandleDevices Read Temps\n");
     if (tempSensorSelect == 0)
       readThermocoupleTemps();
     else
@@ -401,4 +458,3 @@ void HandleDevices(void *)
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
-
