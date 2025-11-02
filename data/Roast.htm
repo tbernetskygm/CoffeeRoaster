@@ -163,6 +163,7 @@
      <div>
       <button value="cancel">Cancel</button>
       <button id="confirmBtn" value="default">Confirm</button>
+      <button id="deleteBtn" value="default">Delete</button>
      </div>
    </form>
 
@@ -212,7 +213,7 @@
   function httpGet(parent, path){
     xmlHttp = new XMLHttpRequest(parent, path);
     xmlHttp.onreadystatechange = getCallback(parent, path);
-    xmlHttp.open("GET", "/list?dir="+path, true);
+    xmlHttp.open("GET", "/getDir?dir="+path, true);
     xmlHttp.send(null);
     //start loading
   }
@@ -240,7 +241,7 @@
     roastFileDialog.showModal();
     console.log("DEBUG Roast addList confirmBtn value = ", confirmBtn.value);
   }
-<!-- end of dialog stuff -->
+//<!-- end of dialog stuff -->
   
   var xmlHttp=createXmlHttpObject();
   var timeoutValue = 500; //.5 sec
@@ -592,7 +593,7 @@
     var data = filename;
     // set up to request the file 
     SendString = SendString+"?VALUE="+data;
-    xhttp.open("PUT",SendString,true);
+    xhttp.open("GET",SendString,true);
     xhttp.send();
     xhttp.onload = function() {
       if (xhttp.status != 200 ) {
@@ -616,7 +617,7 @@
        const cCoffeeType = jdoc["Coffee Type"]; // "Columbian"
        const cCoffeeOpt = jdoc["Coffee Opt"]; // "Columbian"
        const cPreheatTime = jdoc["Preheat Time (sec)"]; // "12"
-       const cPreheatTemp = jdoc["Preheat Temp degrees C "]; // "12"
+       const cPreheatTemp = jdoc["Preheat Temp degrees C"]; // "12"
        const cPreheatServoPos = jdoc["Preheat Servo Pos"]; // "12"
        const cRoastTime = jdoc["Roast Time (sec)"]; // "12"
        const cFinishTemp = jdoc["Finish Temp degrees C "]; // "12"
@@ -670,6 +671,7 @@
        // Don't really have to do this...
        returnString = returnString + JSON.stringify(outData);
        xhttp.open("PUT",returnString,true);
+       xhttp.setRequestHeader("Content-Type", "application/json");
        xhttp.send();
       }
     }
@@ -769,7 +771,7 @@ function UpdateHeatGunSetting(value){
 	//	}
 	//}
 	// syntax is really weird
-	xhttp.open("PUT","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
+	xhttp.open("POST","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
 	xhttp.send();
 } 
 
@@ -786,7 +788,7 @@ function UpdateTempSlider(value){
 	}
 	
 	// syntax is really weird
-	xhttp.open("PUT","UPDATE_TEMP_SLIDER?VALUE="+value,true);
+	xhttp.open("POST","UPDATE_TEMP_SLIDER?VALUE="+value,true);
 	xhttp.send();
 }
  

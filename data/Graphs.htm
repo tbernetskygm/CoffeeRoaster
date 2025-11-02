@@ -117,7 +117,7 @@ avtitle" style="color:blue;margin:20px;">Coffee Roaster</div>
   function httpGet(parent, path){
     xmlHttp = new XMLHttpRequest(parent, path);
     xmlHttp.onreadystatechange = getCallback(parent, path);
-    xmlHttp.open("GET", "/list?dir="+path, true);
+    xmlHttp.open("GET", "/getDir?dir="+path, true);
     xmlHttp.send(null);
     //start loading
   }
@@ -411,16 +411,16 @@ function ButtonPressEvent(sendstr,element){
 	
 	if (sendstr == "TEMP_CONFIG_REQ") {
 	    
-        xhttp.open("PUT",sendstr,true);
+        xhttp.open("GET",sendstr,true);
             
         
 	} 
     else if (sendstr == "ROAST_LOG_REQ") {
 	    
-        xhttp.open("PUT",SendString,true);
+        xhttp.open("GET",SendString,true);
 	}
 	else {
-		xhttp.open("PUT",sendstr,true);
+		xhttp.open("GET",sendstr,true);
     }
     xhttp.send();
 	
@@ -621,7 +621,7 @@ function processGraph()
   //};
 
   }
-   xmlHttp.open("GET", "/xml", true);
+   xmlHttp.open("GET", "/xmlUpdate", true);
    xmlHttp.send();
 //}, timeoutValue ) ;
 	// might haveto play with timeout value
