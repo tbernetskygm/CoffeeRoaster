@@ -1,0 +1,523 @@
+//#include <SPIFFS.h>
+#include "ProjectDefines.h"
+#include "Globals.h"
+#include<ArduinoJson.h>
+#include <time.h>
+#include "FileSystemFunctions.h"
+#include "RoasterControls.h"
+
+#ifdef NEW_WIFI
+
+#endif
+
+String get_timer_string(int value)
+{
+  char  tmpstr[40];
+
+  // divide by 60 to get minutes
+  int mins = value / 60;
+  int secs = value % 60;
+  sprintf(tmpstr, "%02d:%02d", mins, secs);
+  return String(tmpstr);
+}
+
+// This is from e-tinkers git hub
+// the formula for temp in kelvin is
+//                 1
+// T = ----------------------------
+//     1/To + (1/beta) * ln(Rt/Ro)
+//
+// https://en.wikipedia.org/wiki/Thermistor
+double readTemp(bool F)
+{
+  double R1 = 10000.0;   // voltage divider resistor value
+  double Beta = 3950.0;  // Beta value
+  double To = 298.15;    // Temperature in Kelvin for 25 degree Celsius
+  double Ro = TempSensorKOhms * 1000.0;   // Resistance of Thermistor at 25 degree Celsius
+  double T;
+  adcValue = analogRead(PIN_TEMP_SENSOR); //Read ADC pin
+  voltageTemp = adcValue * Vs/adcMax;
+  Rt = R1 * voltageTemp / (Vs - voltageTemp);
+  T = 1/(1/To + log(Rt/Ro)/Beta);    // Temperature in Kelvin
+  T = T - 273.15;
+  if (F)
+    T = T * 9 / 5 + 32;
+
+  return T;
+}
+
+// this was formula for getting temp from original tutorial
+String get_temp_string() {
+  // variables for Temp sensor
+  if ( TempSensorKOhms == 10) {
+    adcValue = analogRead(PIN_TEMP_SENSOR); //Read ADC pin
+    voltageTemp = (float)adcValue / 4095.0 * 3.3; // calculate voltage
+    //   R1 value 10K
+    Rt = 10 * voltageTemp / (3.3 - voltageTemp); // calculate resistance of thermistor
+    //                                               vv is thermistor @ 25 deg
+    double tempK = 1 / (1 / (273.15 + 25) + log(Rt / TempSensorKOhms) / 3950.0 ); // Temp in Kelvin
+    tempC = tempK - 273.15; // Temp converted to Celsius
+    tempF = (tempC * 9 / 5) + 32.0;
+  }
+  else {
+  tempC=readTemp(false);
+  tempF=readTemp(true);
+  }
+
+  if ( tempC < 0)
+  {
+  // for testing print out data
+  //Serial.printf("ADC value :%d,\tVoltage : %.2fV, \tTempC : %.2fC \tTempF : %.2fF\n"
+       //,adcValue, voltageTemp,tempC, tempF);
+  }
+  return String(tempC);
+}
+
+String get_date_string() {
+  static const char *wd[7] = { "Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat" };
+  struct tm *tm;
+  struct tm  timeinfo;
+  time_t  t;
+  char    dateTime[40];
+  if (!getLocalTime(&timeinfo)) 
+  {
+    //Serial.println("Failed to get local time from NTP!!");
+    t = time(NULL);
+    tm = localtime(&t);
+    
+  } else
+    tm=	&timeinfo;
+  
+  sprintf(dateTime, "%04d/%02d/%02d(%s) %02d:%02d:%02d.",
+          tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+          wd[tm->tm_wday],
+          tm->tm_hour, tm->tm_min, tm->tm_sec);
+  //Serial.printf("get_date_string date :%s\n", dateTime);
+  return String(dateTime);
+
+} 
+
+String get_short_date_string() {
+  struct tm *tm;
+  struct tm  timeinfo;
+  time_t  t;
+  char    dateTime[40];
+  if (!getLocalTime(&timeinfo)) 
+  {
+    //Serial.println("Failed to get local time from NTP!!");
+    t = time(NULL);
+    tm = localtime(&t);
+  } else
+    tm=	&timeinfo;
+  
+  sprintf(dateTime, "%04d_%02d_%02d-%02d:%02d.",
+          tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+          tm->tm_hour, tm->tm_min);
+  //Serial.printf("get_short_date_string date :%s\n", dateTime);
+  return String(dateTime);
+} 
+
+
+double CalcAvgTemp(double temps, int timeval)
+{
+  double av=0;
+  //Serial.print("CalcAvgTemp temps "); Serial.println(temps);
+  //Serial.print("CalcAvgTemp timeval "); Serial.println(timeval);
+  av= temps/timeval;
+  //Serial.print("CalcAvgTemp avg "); Serial.println(av);
+  return av;
+}
+
+
+// need to look through config data to figure out 
+// steps and temps
+int getServoPos( int temp)
+{
+  int i=0;
+  float temp1=0.0;
+  float temp2=0.0;
+  int pos1;
+  int pos2;
+  int calcPos=0;
+  //Serial.printf("getServoPos temp: %d\n",temp);
+  // interpolate config data for servo position 
+  if(tempData[0].tempC > 0 )
+  {
+    //Serial.print("getServoPos temp "); Serial.println(temp);
+    for ( i = 0; i < SERVO_MAX_STEPS; i++) {
+	  //Serial.print(" getServoPos tempC");Serial.println(tempData[i].tempC);
+	  if ( tempData[i].tempC >= (float) temp){
+		  //Serial.print(" Found higher temp2: ");Serial.println(tempData[i].tempC);
+		  temp2=tempData[i].tempC;
+		  //Serial.print(" Found higher temp1: ");Serial.println(tempData[i-1].tempC);
+		  temp1=tempData[i-1].tempC;
+		  //Serial.print(" Found servo pos2: ");Serial.println(tempData[i].ServoPosition);
+		  pos2=tempData[i].ServoPosition;
+		  //Serial.print(" Found servo pos1: ");Serial.println(tempData[i-1].ServoPosition);
+		  pos1=tempData[i-1].ServoPosition;
+		  break;
+	  }
+    }
+    // make sure we found a higher temp value
+    if (temp2 > 0)
+    {
+      calcPos =((int)( pos1+(pos2-pos1)/(temp2-temp1)*(temp-temp1)));
+      //Serial.print(" getServoPos: Calculated servo pos: ");Serial.println(calcPos);
+    } else {
+      calcPos =0;
+      //Serial.printf(" Cannot calculate servo pos temp value too high! %d\n",temp);
+    }
+  } else {
+	  Serial.println("Config Data not loaded!!");
+  }
+	  
+  //step1+(step2-step1)/(temp2-temp1)*(temp-temp1)
+  return calcPos;
+}
+
+
+// need to look through config data to figure out 
+// temp based on position
+float getTempVal( int pos)
+{
+  int i=0;
+  float temp1;
+  float temp2;
+  int pos1;
+  int pos2;
+  float calcTemp=0.0;
+  // interpolate config data for servo position 
+  if(tempData[0].tempC > 0 )
+  {
+    //Serial.print("getTempVal pos "); Serial.println(pos);
+    for ( i = 0; i < SERVO_MAX_STEPS; i++) {
+	  //Serial.print(" getTempVal tempC");Serial.println(tempData[i].tempC);
+	  if ( tempData[i].ServoPosition >= pos){
+		  //Serial.print(" Found higher pos: ");Serial.println(tempData[i].ServoPosition);
+		  temp2=tempData[i].tempC;
+		  //Serial.print(" Found higher temp1: ");Serial.println(tempData[i-1].tempC);
+		  temp1=tempData[i-1].tempC;
+		  //Serial.print(" Found servo pos2: ");Serial.println(tempData[i].ServoPosition);
+		  pos2=tempData[i].ServoPosition;
+		  //Serial.print(" Found servo pos1: ");Serial.println(tempData[i-1].ServoPosition);
+		  pos1=tempData[i-1].ServoPosition;
+		  break;
+	  }
+    }
+    calcTemp =(( temp1+(temp2-temp1)/(pos2-pos1)*(pos-pos1)));
+    //Serial.print(" Calculated temp : ");Serial.println(calcTemp);
+  } else {
+	  Serial.println("Config Data not loaded!!");
+  }
+	  
+  //step1+(step2-step1)/(temp2-temp1)*(temp-temp1)
+  return calcTemp;
+}
+
+
+void parseRoastData(String jsonData)
+{
+  JsonDocument jdoc;
+  int Num;
+  double tempC;
+  double tempF;
+  int servoPos;
+
+  Serial.print("parseRoastData - jsonData : ");Serial.println(jsonData);
+  
+    // json stuff
+    size_t filesize = jsonData.length();
+    //Serial.print("parseRoastData - file size : ");Serial.println(filesize);
+    DeserializationError error;
+    error = deserializeJson(jdoc,jsonData);
+    if(error) {
+      Serial.println("parseRoastLog deserializeJson() failed");
+      Serial.println(error.f_str());
+      return;
+    }
+    //Serial.println("parseRoastData First deserializeJson() worked!!");
+    const char* Roast_Date = jdoc["Roasting Log Date"]; // "1970/01/01(Thr)00:02:01"
+    unsigned int cBeanQty = jdoc["Bean Quantity (ounces)"]; // "12"
+    unsigned int cPreheatTime = jdoc["Preheat Time (sec)"]; // "12"
+    unsigned int cPreheatTemp = jdoc["Preheat Temp degrees C "]; // "12"
+    unsigned int cPreheatServoPos = jdoc["Preheat Servo Pos"]; // "12"
+    unsigned int cRoastTime = jdoc["Roast Time (sec)"]; // "12"
+    unsigned int cFinishTemp = jdoc["Finish Temp degrees C "]; // "12"
+    unsigned int cFinishServoPos = jdoc["Finish Servo Pos"]; // "12"
+    const char* HeatGunSpeed = jdoc["Heatgun Speed"]; // "12"
+    FinishTemp=cFinishTemp;
+    //Serial.printf("parseRoastData FinishTemp %d\n", FinishTemp);
+    //Serial.printf("parseRoastData HeatGunSpeed %s\n", HeatGunSpeed);
+}
+
+void parseJsonFile(String filename)
+{
+  JsonDocument jdoc;
+  //JsonDocument<2048> jdoc2;
+  int Num;
+  double tempC;
+  double tempF;
+  int servoPos;
+
+  //Serial.print("parseJsonFile - opening file : ");Serial.println(filename);
+  //if (SPIFFS.exists(filename)  )
+  //{
+  File file = openFile(filename.c_str(),"r"); 
+  if (!file || file.isDirectory()){
+    Serial.print("parseJsonFile - failed to open file : ");Serial.println(filename);
+    CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+    return;
+  }
+  //Serial.print("parseJsonFile - opened file : ");Serial.println(filename);
+  
+  // json stuff
+  size_t filesize = file.size();
+    
+  DeserializationError error;
+  error = deserializeJson(jdoc,file);
+  if(error) {
+    Serial.println("deserializeJson() failed");
+    Serial.println(error.f_str());
+    file.close();
+    CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+    return;
+  }
+  //Serial.println("First deserializeJson() worked!!");
+  file.close();
+  const char * ConfigurationDate = jdoc["Configuration Date"]; // "1970/01/01(Thr)00:02:01"
+    // Set Global Variable
+  //Serial.printf("UtilityFunctions::parseJsonFile ConfigurationDate = %s\n",ConfigurationDate);
+    Configuration_Date = ConfigurationDate;
+  //Serial.printf("UtilityFunctions::parseJsonFile Configuration_Date = %s\n",Configuration_Date.c_str());
+
+  for (JsonObject step : jdoc["steps"].as<JsonArray>()) {
+
+    unsigned int step_NUM = step["NUM"]; // "1", "2", "3"
+    //Serial.print("steps num : ");Serial.println(step_NUM);
+    float step_TEMPAVGC = step["TMPC"]; // "29.22", "29.22", "29.22"
+    //Serial.print(": tempc : ");Serial.println(step_TEMPAVGC);
+    float step_TEMPAVGF = step["TMPF"]; // " 72.00", " 72.00", " 72.00"
+    unsigned int step_SERVOPOS = step["POS"]; // "32", "32", "32"
+    //Serial.print(": servo pos : ");Serial.println(step_SERVOPOS);
+    // Put in structure of config data
+    tempData[step_NUM-1].ConfigStep=step_NUM;
+    tempData[step_NUM-1].ServoPosition=step_SERVOPOS;
+    tempData[step_NUM-1].tempC=step_TEMPAVGC;
+    tempData[step_NUM-1].tempF=step_TEMPAVGF;
+  }
+  // config data has NUM (int) , TEMPAVGF(float), TEMPAVGC(float) , SERVOPOS (int)
+    file.close();
+    CONFIG_DATA_LOADED = true; // Flag used to tell that config data was loaded
+ // } else 
+ // {
+ //   Serial.print("parseJsonFile no file : ");Serial.println(filename);
+ //   CONFIG_DATA_LOADED = false; // Flag used to tell that config data was loaded
+ // }
+}
+
+// the idea is to read the temp value for x number of seconds
+// and see if it is higher or lower than the temp we want to be at
+// and change the servo position.
+int adjustTemp(int setPoint)
+{
+  int iAvgTemp=0;
+  int errVal=0;
+  int newPos=0;
+  // should be collecting temp values in tempTotalC and tempTotalF
+  // and the number of samples is tempSamples
+  if (TempPref)
+  {
+    tempAvgF=CalcAvgTemp(tempTotalF,tempSamples);
+    iAvgTemp=(int) tempAvgF;
+  }
+  else
+  {
+    tempAvgC=CalcAvgTemp(tempTotalC,tempSamples);
+    iAvgTemp=(int) tempAvgC;
+  }
+    
+  errVal = setPoint - iAvgTemp;
+
+  if ( abs(errVal) > tempTolerance)
+  {
+   //Serial.print("adjustTemp out of tolerance: "); Serial.println(errVal);
+   newPos=getServoPos(setPoint+errVal);
+   //Serial.print("adjustTemp out of new position: "); Serial.println(newPos);
+  }
+  tempTotalF=0;
+  tempTotalC=0;
+  return newPos;
+}
+
+void readThermocoupleTemps()
+{
+  tempC=thermocouple.readCelsius();
+  tempF=thermocouple.readFahrenheit();
+}
+
+void readThermistorTemps()
+{
+  tempC=readTemp(false);
+  tempF=readTemp(true);
+}
+
+// this is a task to read temps
+// and move the Servo
+void HandleDevices(void *)
+{
+  static bool servoMoving = false;
+  for(;;)// infinite loop
+  {
+    //read temps
+    //WHENDEBUG(4)
+      //Serial.printf("HandleDevices Read Temps\n");
+    if (tempSensorSelect == 0)
+      readThermocoupleTemps();
+    else
+      readThermistorTemps();
+
+#ifdef Tempservo
+    // init servoPos =0 servoPosNew 0 
+       
+    if ( servoPos != servoPosNew)
+    {
+      servoMoving=true;
+      //Serial.print("Loop servoPosNew "); Serial.println(servoPosNew);
+      //Serial.print("Loop servoPos "); Serial.println(servoPos);
+      // rotate the servo
+      if ( servoPosNew >= SERVO_MAX_STEPS)
+        servoPosNew=SERVO_MAX_STEPS;
+      
+      TempServo.write(servoPosNew);
+      vTaskDelay(25/ portTICK_PERIOD_MS);
+      servoPos=TempServo.read();
+      // sometimes the position read does not match the position sent
+      // this hack makes up for it???
+      int posDiff=servoPosNew-servoPos;
+      if (posDiff == 1)
+        servoPos=servoPosNew;
+      //Serial.print("Loop Servo Attached = " );Serial.println(TempServo.attached());
+      //Serial.print("Loop Servo read = " );Serial.println(servoPos);
+    } else {
+      // Servo has moved to position
+      servoMoving=false;
+    }
+#endif
+    // wait for a second
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
+}
+#ifndef NEW_WIFI
+void ProcessTempPref() {
+#else
+void ProcessTempPref(AsyncWebServerRequest *request) {
+#endif
+  String t_state ="";
+  #ifndef NEW_WIFI
+  t_state = Server.arg("VALUE");
+  #else
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
+  Serial.print("ProcessTempPref "); Serial.println(t_state);
+  if ( t_state == "F" )
+    TempPref = true;
+  else
+    TempPref = false;
+  #ifndef NEW_WIFI
+  Server.send(200, "text/plain", ""); //Send web page
+  #else
+  request->send(200,"","text/plain");
+  #endif
+}
+
+
+#ifndef NEW_WIFI
+void UpdateTempSlider() {
+#else
+void UpdateTempSlider(AsyncWebServerRequest *request) {
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
+
+  String t_state ="";
+  #ifndef NEW_WIFI
+  t_state = Server.arg("VALUE");
+  #else
+  //AsyncWebServerRequest *request;
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
+  int servoVal=-1;
+  // convert the string sent from the web page to an int
+  servoPosNew = t_state.toInt();
+  Serial.print("UpdateTempSlider new position: "); Serial.println(servoPosNew);
+  // if config data not loaded,get it
+  if (!CONFIG_DATA_LOADED)
+    readConfigData();
+  setTemp=getTempVal(servoPosNew);
+  sprintf(buf, "%d %.2f", servoPosNew,setTemp);
+  // now send it back
+  #ifndef NEW_WIFI
+  Server.send(200, "text/plain", buf); //Send web page
+  #else
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", String(buf));
+  request->send(resp);
+  #endif
+  //Serial.print("UpdateTempSlider Servo Attached = " );Serial.println(TempServo.attached());
+  //Serial.print("UpdateTempSlider Servo read = " );Serial.println(servoVal);
+}
+
+
+#ifndef NEW_WIFI
+void UpdateTempSensorSlider() {
+#else
+void UpdateTempSensorSlider(AsyncWebServerRequest *request) {
+#endif
+  char buf[64];
+  char * buf_p = &buf[0];
+  String t_state ="";
+   
+  #ifndef NEW_WIFI
+  t_state = Server.arg("VALUE");
+  #else
+  
+  //Check if GET arg exists
+  if(request->hasArg("VALUE"))
+  t_state = request->arg("VALUE");
+  
+  #endif
+  // convert the string sent from the web page to an int
+  tempSensorSelect = t_state.toInt();
+  Serial.print("UpdateTempSensorSlider new : "); Serial.println(tempSensorSelect);
+  // if config data not loaded,get it
+  sprintf(buf, "TempSensorSelect %d ", tempSensorSelect);
+  // now send it back
+  #ifndef NEW_WIFI
+  Server.send(200, "text/plain", buf); //Send web page
+  #else
+  request->send(200,buf_p,"text/plain");
+  #endif
+}
+
+void printState()
+{
+  // this is for debug to print out the
+  // state structure
+  Serial.printf("---- Machine State ----\n\t");
+  Serial.printf("doRoast %d\n\t", rState->doRoast);
+  Serial.printf("doConfig %d\n\t", rState->doConfig);
+  Serial.printf("mixerpwr %d\n\t", rState->mixerpwr);
+  Serial.printf("preheat %d\n\t", rState->preheat);
+  Serial.printf("roast %d\n\t", rState->roast);
+  Serial.printf("first %d\n\t", rState->first);
+  Serial.printf("last %d\n\t", rState->last);
+  Serial.printf("stopit %d\n\t", rState->stopit);
+  Serial.printf("timerStart %d\n\t", rState->timerStart);
+  Serial.printf("preheatTimerStart %d\n\t", rState->preheatTimerStart);
+  Serial.printf("utilTimerIntSetup %d\n\n", rState->utilTimerIntSetup);
+}
