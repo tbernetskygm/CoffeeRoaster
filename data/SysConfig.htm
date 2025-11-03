@@ -72,7 +72,7 @@
 
 <div>
 <div class="bodytext">Set Temp Config Steps </div>
-<input type="number" id = "maxsteps" min="0" max="360" step="1" value="1" size="4"  onchange="NumberInputChanged('maxsteps','TEMP_CONFIG_MAX_STEPS')">Max Number of steps</input>
+<input type="number" id = "maxsteps" min="0" max="360" step="2" value="1" size="4"  onchange="NumberInputChanged('maxsteps','TEMP_CONFIG_MAX_STEPS')">Max Number of steps</input>
 </div>
 
 <div>
@@ -103,7 +103,7 @@
 <br>
 </main>
 <footer class="footer">
-    <p>Page Version:1.2 Date:Aug 29,2024</p>
+    <p>Page Version:1.3 Date:Nov 2,2025</p>
 </footer>
 </body>
 </html>
@@ -112,6 +112,7 @@ var xmlHttp=createXmlHttpObject();
 var timeoutValue = 500;
 var tempPref = 0;
 var pageNew=0;
+var tempSliderPos=0;
 function createXmlHttpObject(){
 	if(window.XMLHttpRequest){
 		xmlHttp=new XMLHttpRequest();
@@ -168,9 +169,16 @@ function response(){
 		if(xmldoc.length >0 ) //Check for valid response
 		{
 			message = xmldoc[0].firstChild.nodeValue;
-			document.getElementById("servopos").innerHTML=message;
+			document.getElementById("servocmd").innerHTML=message;
+			 // update the slider to match it...
+            if ( tempSliderPos != message)
+            {
+                tempSliderPos=message;
+                document.getElementById("tempcontrol").value = message;
+            }
 		}
-          var tElement;
+        
+		var tElement;
 		 // Timer Value Data
         xmldoc = xmlResponse.getElementsByTagName("CTIMEREM");
         if(xmldoc.length >0 ) //Check for valid response
@@ -187,29 +195,31 @@ function response(){
             if (document.activeElement != tElement)
             {
               document.getElementById("cstep").value = message;
-	    }
+	    	}
         }
-	xmldoc = xmlResponse.getElementsByTagName("C_MAXSTEPS");
-	if(xmldoc.length >0 ) //Check for valid response
-	{
-		message = xmldoc[0].firstChild.nodeValue;
-                tElement = document.getElementById("min0");
-                if (document.activeElement != tElement)
-                {
-		  document.getElementById("maxsteps").value = message;
+		xmldoc = xmlResponse.getElementsByTagName("C_MAXSTEPS");
+		if(xmldoc.length >0 ) //Check for valid response
+		{
+			message = xmldoc[0].firstChild.nodeValue;
+            tElement = document.getElementById("maxsteps");
+            if (document.activeElement != tElement)
+            {
+		  		document.getElementById("maxsteps").value = message;
+			}
 		}
-	}
-	xmldoc = xmlResponse.getElementsByTagName("C_STEP_TIME");
-	if(xmldoc.length >0 ) //Check for valid response
-	{
-		message = xmldoc[0].firstChild.nodeValue;
-                tElement = document.getElementById("min0");
-                if (document.activeElement != tElement)
-                {
-		  document.getElementById("configtimestep").value = message;
+	
+		xmldoc = xmlResponse.getElementsByTagName("C_STEP_TIME");
+		if(xmldoc.length >0 ) //Check for valid response
+		{
+			message = xmldoc[0].firstChild.nodeValue;
+            tElement = document.getElementById("configtimestep");
+            if (document.activeElement != tElement)
+            {
+		  		document.getElementById("configtimestep").value = message;
+			}
 		}
-	}
-          // Temperature Data check temp preference
+
+        // Temperature Data check temp preference
         xmldoc = xmlResponse.getElementsByTagName("TEMP_PREF");
         if(xmldoc.length >0 ) //Check for valid response
         {
@@ -234,7 +244,27 @@ function response(){
             } //
             document.getElementById("temptxt").value = message;
         }
-        // Get initial data or page
+		
+		//Config Temp Start/Stop
+        xmldoc = xmlResponse.getElementsByTagName("CFGSTART");
+        if(xmldoc.length >0 ) //Check for valid response
+        {
+            message = xmldoc[0].firstChild.nodeValue;
+            if ( message == 0 ) {// timer stopped
+                document.getElementById("btnTempConfigStart").innerHTML = "Start Temp Config";
+                document.getElementById("btnTempConfigStart").setAttribute("class" , "offButton");
+				document.getElementById("maxsteps").disabled = false;
+                document.getElementById("configtimestep").disabled = false;
+			}
+			else { // 
+                document.getElementById("btnTempConfigStart").innerHTML = "Stop Temp Config";
+                document.getElementById("btnTempConfigStart").setAttribute("class" , "onButton");
+				document.getElementById("maxsteps").disabled = true;
+                document.getElementById("configtimestep").disabled = true;
+			}
+		}
+
+		// Get initial data or page
         if (pageNew == 0)
         {
             console.log("SysConfig response pageNew = ", pageNew);
@@ -251,6 +281,7 @@ function response(){
 			{
 				message = xmldoc[0].firstChild.nodeValue;
 				document.getElementById("tempcontrol").value = message;
+				document.getElementById("servocmd").innerHTML = message;
 			}    
 			xmldoc = xmlResponse.getElementsByTagName("HEATGUN");
 			if(xmldoc.length >0 ) //Check for valid response
@@ -368,11 +399,7 @@ function UpdateTempSlider(value){
 function UpdateHeatGunSetting(value){
 	var xhttp = new XMLHttpRequest;
 	timeoutValue = 500 ;
-	//xhttp.onreadystatechange = function() {
-	//	if (this.readyState == 4 && this.status ==200) {
-	//	document.getElementById("servocmd").innerHTML=this.responseText;
-	//	}
-	//}
+	
 	// syntax is really weird
 	xhttp.open("POST","UPDATE_HEATGUN_SLIDER?VALUE="+value,true);
 	xhttp.send();
@@ -382,11 +409,7 @@ function UpdateHeatGunSetting(value){
 function UpdateTempSensorSetting(value){
 	var xhttp = new XMLHttpRequest;
 	timeoutValue = 500 ;
-	//xhttp.onreadystatechange = function() {
-	//	if (this.readyState == 4 && this.status ==200) {
-	//	document.getElementById("servocmd").innerHTML=this.responseText;
-	//	}
-	//}
+	
 	// syntax is really weird
 	xhttp.open("POST","UPDATE_TEMPSENSOR_SLIDER?VALUE="+value,true);
 	xhttp.send();
