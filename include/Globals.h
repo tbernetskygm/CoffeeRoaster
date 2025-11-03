@@ -12,7 +12,7 @@
 //#include <WiFi.h>
 //#include <WebServer.h>
 #endif
-
+#include <Ticker.h>
 #include <FS.h>
 //#include <ArduinoJson.h>
 #ifdef Tempservo
@@ -131,15 +131,15 @@ extern int PreheatServoPos;
 extern int FinishTemp;
 extern int FinishServoPos;
 extern int PreheatTimerStartValue;
-extern int PreheatTimerValue;// in seconds
-
+extern volatile int PreheatTimerValue;// in seconds
+extern int UtilTimerValue;
 // Config timer
 extern int ConfigTimerMin ;
 extern int ConfigTimerMinNew ;
 extern int ConfigTimerSec ;
 extern int ConfigTimerSecNew;
 extern int ConfigTimerStartValue;
-extern int ConfigTimerValue;// in seconds
+extern volatile int ConfigTimerValue;// in seconds
 extern int ConfigElaspedTime;// in seconds
 extern int ConfigSteps;
 extern int ConfigStep;
@@ -165,10 +165,13 @@ extern int tempSamples; // every 10 seconds
 // json stuff
 extern ConfigStruct tempData[180];
 // timer
-extern hw_timer_t *RoastTimer ;
-extern hw_timer_t *UtilTimer ;
-extern volatile SemaphoreHandle_t roastTimerSemaphore;
-extern volatile SemaphoreHandle_t utilTimerSemaphore;
+//extern hw_timer_t *RoastTimer ;
+//extern hw_timer_t *UtilTimer ;
+extern Ticker UtilTimerT;
+extern Ticker RoastTimerT;
+extern volatile SemaphoreHandle_t roastTimerTSemaphore;
+//extern volatile SemaphoreHandle_t utilTimerSemaphore;
+extern volatile SemaphoreHandle_t utilTimerTSemaphore;
 // adc values to figure out why it stops giving valid data
 extern int adcValue;
 extern double voltageTemp;
