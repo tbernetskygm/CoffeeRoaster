@@ -130,7 +130,7 @@ void SendXML(AsyncWebServerRequest *request) {
   }
 //Serial.print("4 XML length");Serial.println(strlen(XML));
    // Send Config Timer Remaining Time
-  sprintf(buf, "<CTIMEREM>%s</CTIMEREM>", get_timer_string(ConfigTimerValue));
+  sprintf(buf, "<CTIMEREM>%s</CTIMEREM>", get_timer_string(UtilTimerValue));
   //strcat(XML, buf);
   tmp=String(buf);
   XMLs += tmp;
@@ -200,7 +200,7 @@ void SendXML(AsyncWebServerRequest *request) {
     //Serial.print("7 XML length");Serial.println(strlen(XML));
   
   // Send UtilTimer Timer Remaining Time
-  sprintf(buf, "<PRE_TIMEREM0>%s</PRE_TIMEREM0>", get_timer_string(PreheatTimerValue));
+  sprintf(buf, "<PRE_TIMEREM0>%s</PRE_TIMEREM0>", get_timer_string(UtilTimerValue));
   //strcat(XML, buf);
   tmp=String(buf);
   XMLs += tmp;
@@ -237,6 +237,20 @@ void SendXML(AsyncWebServerRequest *request) {
   }
   else {
     sprintf(buf, "<PTSTART>0</PTSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
+  }
+
+     // Config Temp start stop
+  if (rState->doConfig) {
+    sprintf(buf, "<CFGSTART>1</CFGSTART>");
+    //strcat(XML, buf);
+    tmp=String(buf);
+    XMLs += tmp;
+  }
+  else {
+    sprintf(buf, "<CFGSTART>0</CFGSTART>");
     //strcat(XML, buf);
     tmp=String(buf);
     XMLs += tmp;
