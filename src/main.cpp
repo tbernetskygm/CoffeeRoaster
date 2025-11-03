@@ -12,6 +12,7 @@
 
 #include <ArduinoJson.h>
 #include <time.h>
+#include <Ticker.h>
 
 /*
   CoffeeRoaster.ino, Modified from
@@ -227,13 +228,14 @@ int PreheatServoPos = 0;
 int FinishTemp = 180;
 int FinishServoPos = 0;
 int PreheatTimerStartValue = 0;
-int PreheatTimerValue = 0;// in seconds
+volatile int PreheatTimerValue = 0;// in seconds
+int UtilTimerValue=0;
 int ConfigTimerMin =0;
 int ConfigTimerMinNew =0 ;
 int ConfigTimerSec =0;
 int ConfigTimerSecNew =0;
 int ConfigTimerStartValue = 0;
-int ConfigTimerValue=0;// in seconds
+volatile int ConfigTimerValue=0;// in seconds
 int ConfigElaspedTime=0;// in seconds
 int ConfigSteps = 1;
 int ConfigStep=0;
@@ -255,8 +257,10 @@ int ServoPosInc=0;
 // Variables for adjusting temp during preheat and roasting
 int tempTolerance=3; // 3 degrees ?
 int tempSamples=10; // every 10 seconds
-volatile SemaphoreHandle_t roastTimerSemaphore;
-volatile SemaphoreHandle_t utilTimerSemaphore;
+volatile SemaphoreHandle_t roastTimerTSemaphore;
+//volatile SemaphoreHandle_t utilTimerSemaphore;
+volatile SemaphoreHandle_t utilTimerTSemaphore;
+//portMUX_TYPE utilTimerMux = portMUX_INITIALIZER_UNLOCKED;
 int loopCounter = 0;
 // adc values to figure out why it stops giving valid data
 int adcValue=0;
@@ -265,9 +269,10 @@ double Rt=0;
 double adcMax=4096.0;
 double Vs=3.3;
 // timer
-hw_timer_t *RoastTimer = NULL;
-hw_timer_t *UtilTimer = NULL;
-
+//hw_timer_t *RoastTimer = NULL;
+//hw_timer_t *UtilTimer = NULL;
+Ticker UtilTimerT;
+Ticker RoastTimerT;
 // the XML array size needs to be bigger that your maximum expected size. 2048 is way too big for this example
 // just some buffer holder for char operations
 //char buf[64];
@@ -537,8 +542,9 @@ void setup() {
   delay(15);
 #endif
   // Create semaphore to inform us when the timer has fired
-  roastTimerSemaphore = xSemaphoreCreateBinary();
-  utilTimerSemaphore = xSemaphoreCreateBinary();
+  roastTimerTSemaphore = xSemaphoreCreateBinary();
+  //utilTimerSemaphore = xSemaphoreCreateBinary();
+  utilTimerTSemaphore = xSemaphoreCreateBinary();
   rState->doRoast=false;
   rState->roast=false;
   rState->preheat=false;
@@ -553,7 +559,8 @@ void setup() {
   // setup task to update roast stuff
   xTaskCreate(UpdateRoastState,"Update Roast State",4096,(void*)rState,tskIDLE_PRIORITY,NULL);
   xTaskCreate(HandleDevices,"Handle Temps and Servo Moving",2000,(void*)DebugNum,1,NULL);
-  
+  //UtilTimerValue = 25; // Test
+  //UtilTimerT.attach_ms(1000,onUtilTimerT,&UtilTimerValue);
   #ifndef NEW_WIFI
   Server.on("/", handleNewRoot);
   Server.on("/Roast", handleNewRoot);
@@ -845,88 +852,9 @@ void setup() {
 }
 
 void loop() {
-  /*
-  //Serial.println("This is loop()");
-#ifndef NEW_WIFI
-  Server.handleClient();
-  Portal.handleRequest();   // Need to handle AutoConnect menu.
-#else
-#endif
-  if (WiFi.status() == WL_IDLE_STATUS) {
-    Serial.println("Reset wifi idle This is loop()");
-#if defined(ARDUINO_ARCH_ESP8266)
+  
 
-    ESP.reset();
-#elif defined(ARDUINO_ARCH_ESP32)
-    ESP.restart();
-#endif
-    Serial.println("Wifi Idle restarting");
-    delay(500);
-  }
-#ifdef Tempservo
- // init servoPos =0 servoPosNew 0 
-  if ( servoPos != servoPosNew)
-  {
-    servoMoving=true;
-    //Serial.print("Loop servoPosNew "); Serial.println(servoPosNew);
-    //Serial.print("Loop servoPos "); Serial.println(servoPos);
-    // rotate the servo
-    if ( servoPosNew >= SERVO_MAX_STEPS)
-      servoPosNew=SERVO_MAX_STEPS;
-      
-    TempServo.write(servoPosNew);
-    delay(25);
-    servoPos=TempServo.read();
-    // sometimes the position read does not match the position sent
-    // this hack makes up for it???
-    int posDiff=servoPosNew-servoPos;
-    if (posDiff == 1)
-      servoPos=servoPosNew;
-    //Serial.print("Loop Servo Attached = " );Serial.println(TempServo.attached());
-    //Serial.print("Loop Servo read = " );Serial.println(servoPos);
-  } else {
-    // Servo has moved to position
-    servoMoving=false;
-  }
-#endif
-*/
-
-  // check for utilTimerSemaphore
-  /*
-  if (xSemaphoreTake(utilTimerSemaphore, 0) == pdTRUE){
-    //Serial.print("utilTimerSemaphore tempXML length :");Serial.println(strlen(tempXML));
-#ifdef CONFIG_PAGE
-    if (TEMP_CONFIG)
-    {
-      if (ConfigTimerValue == 0)
-      {
-	      Serial.print("In Loop -- Config -- utilTimerSemaphore is true finished step " );Serial.println(ConfigStep);
-	      RunTempConfig(++ConfigStep);
-	      ConfigElaspedTime++;// in seconds
-      } else 
-      {
-        //	Serial.println("in loop UtilTimerSemaphore Collecting Temps = "); 
-	      // Collect Temp values
-	      tempTotalC+=tempC;
-	      tempTotalF+=tempF;
-      }
-    }
-    else if (rState->preheat)
-    {
-      Serial.println("In Loop UtilTimerSemaphore -- preheat -- ");
-    }
-#endif
-  }
-*/
-/*
-//  if (tempSensorSelect == 0)
-//    readThermocoupleTemps();
-//  else
-//    readThermistorTemps();
-  //Serial.print("C = "); 
-  //Serial.println(thermocouple.readCelsius());
-  delay(500);
-  */
+ 
 }
 
 
