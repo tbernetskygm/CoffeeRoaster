@@ -382,7 +382,7 @@ void HandleDevices(void *)
     if ( servoPos != servoPosNew)
     {
       servoMoving=true;
-      //Serial.print("Loop servoPosNew "); Serial.println(servoPosNew);
+      //Serial.printf("HandleDevices servoPosNew %d servoPos %d\n",servoPosNew,servoPos);
       //Serial.print("Loop servoPos "); Serial.println(servoPos);
       // rotate the servo
       if ( servoPosNew >= SERVO_MAX_STEPS)
@@ -394,8 +394,8 @@ void HandleDevices(void *)
       // sometimes the position read does not match the position sent
       // this hack makes up for it???
       int posDiff=servoPosNew-servoPos;
-      if (posDiff == 1)
-        servoPos=servoPosNew;
+      if (posDiff >= 1)
+        servoPos++;
       //Serial.print("Loop Servo Attached = " );Serial.println(TempServo.attached());
       //Serial.print("Loop Servo read = " );Serial.println(servoPos);
     } else {
