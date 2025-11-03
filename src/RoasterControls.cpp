@@ -990,7 +990,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	        tempTotalC+=tempC;
 	        tempTotalF+=tempF;
         }
-        return;
+        
       }
 
       
