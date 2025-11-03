@@ -311,7 +311,9 @@ void print_reset_reason(RESET_REASON reason)
 }
 #endif
 
+#ifdef WIFI_MANAGER
 
+#endif
 
 
 #ifdef AUTO_CONNECT
@@ -371,6 +373,16 @@ void exitOTAError(uint8_t err) {
 }
 #endif
 #ifdef WIFI_MANAGER
+
+void ResetWiFi(AsyncWebServerRequest *request)
+{
+  Serial.printf("ResetWiFi\n");
+  wm.resetSettings();
+  AsyncWebServerResponse *resp = request->beginResponse(200, "text/plain", "Reset WiFi");
+  request->send(resp);
+  wm.reboot();
+}
+
 String getParam(String name){
   //read parameter from server, for customhmtl input
   String value;
@@ -727,6 +739,7 @@ void setup() {
     },handleFileUpload);//FileSystemFunctions.cpp
 
     Server.on("/DEBUG_VAL",HTTP_POST, SetDebug);
+    Server.on("/RESET_WIFI",HTTP_POST, ResetWiFi);
   //}
   #endif
 

@@ -101,6 +101,10 @@
 <button type="button" class = "btn" id = "btnTempConfigDownload" onclick="ButtonPressEventDownload('download_config')">Download Config Data</button>
 <button type="button" class = "btn" id = "btnRoastLogDownload" onclick="ButtonPressEventDownload('download_log')">Download Roast Log Data</button>
 <br>
+<div class="bodytext">Reset WiFi Data 
+<br>
+<button type="button" class = "btn" id = "btnResetWifiConfig" onclick="ButtonPressEvent('RESET_WIFI')">Reset Wifi Connection</button>
+</div>
 </main>
 <footer class="footer">
     <p>Page Version:1.3 Date:Nov 2,2025</p>
@@ -421,6 +425,10 @@ function ButtonPressEvent(sendstr){
 	var SendString = "sendstr+";
 	if (sendstr == "TEMP_CONFIG_REQ") {
         xhttp.open("GET",sendstr,true);
+	} else if (sendstr == "RESET_WIFI") {
+		if (!confirm("Do you really want to reset the Wifi Connection Data ? The system will reboot into AP mode")) {
+            return;
+	}
 	} else {
 		xhttp.open("POST",sendstr,true);
     }
