@@ -525,7 +525,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
     path = request->getParam("FileName")->value();
   
   Serial.println("handleFileUpload: path=" + path);
-  if (LittleFS.exists(path)) {
+  if (LittleFS.exists(path) && index == 0) {
       deleteFile((char *)path.c_str());
   }
   //Serial.print("Upload: Opening upload.filename: "); 
