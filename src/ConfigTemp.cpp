@@ -48,82 +48,57 @@ void RunTempConfig (int Step)
   
   sprintf(buff, "\0");
   if (Step >= 0 ){
-    //WHENDEBUG(2)
-      //Serial.print("RunTempConfig step :");Serial.println(Step);
-    //strcpy(buff, "{ "); 
-    //appendFile(LittleFS,fileName.c_str(), cdata_p);
-    //sprintf(buf, "{\n\"NUM\": %d,\n", Step);
-    //strcat(buff,buf);
+    
     fileData = "{\n\"NUM\" :" + String(Step) + ",\n";
-    //WHENDEBUG(5)
-      //Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
-    //sprintf(buf, "\"TMPF\": %.2f,\n", tempAvgF);
-    //strcat(buff,buf);
+    
     fileData+= "\"TMPF\": " + String(tempAvgF) + ",\n";
-    //WHENDEBUG(5)
-      //Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
-    //sprintf(buf, "\"TMPC\": %.2f,\n", tempAvgC);
-    //strcat(buff,buf);
+    
     fileData+= "\"TMPC\": " + String(tempAvgC) + ",\n";
-    //WHENDEBUG(5)
-      //Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
-    //sprintf(buf, "\"POS\": %d\n", servoPos);
-    //strcat(buff,buf);
+    
     fileData+= "\"POS\": " + String(servoPos) + ",\n";
-    //WHENDEBUG(5)
-      //Serial.printf("** buff size %d\n",strlen(buff));
-    //appendFile(fileName.c_str(), cdata_p);
+    ;
     if (Step > ConfigMaxSteps) 
     {
-      //sprintf(buf, "}\n");
-      //strcat(buff,buf);
-      //WHENDEBUG(5)
-        //Serial.printf("** buff size %d\n",strlen(buff));
+      
       fileData += "}\n";
     }
     else
     { 
-      //sprintf(buf, "},\n"); 
-      //strcat(buff,buf);
-      //WHENDEBUG(5)
-        //Serial.printf("** buff size %d\n",strlen(buff));
+      
       fileData += "},\n";
     }
 
-    //appendFile(fileName.c_str(), cdata_p);
+    
 
     servoPosNew=servoPos+ServoPosInc;
     //WHENDEBUG(2)
-      //Serial.print("\tRunTempConfig ServoPosInc =");Serial.println(ServoPosInc);
-   // Serial.print("\tRunTempConfig ServoPos =");Serial.println(servoPos);
-   // Serial.print("\tRunTempConfig ServoPosNew =");Serial.println(servoPosNew);
+    Serial.print("\tRunTempConfig ServoPosInc =");Serial.println(ServoPosInc);
+    Serial.print("\tRunTempConfig ServoPos =");Serial.println(servoPos);
+    Serial.print("\tRunTempConfig ServoPosNew =");Serial.println(servoPosNew);
     //Serial.print("RunTempConfig Finished step tempXML length :");Serial.println(strlen(tempXML));
     //        // Reset values for next pass
     tempTotalC=0;
     tempTotalF=0;
-    ConfigTimerValue = ConfigTimerStartValue;
+    UtilTimerValue = ConfigTimerStartValue;
   }
 
   if (Step > ConfigMaxSteps) {
     //Serial.print("RunTempConfig Done Send xml Step :");Serial.println(Step);
-    //strcat(tempXML, "</ConfigData>\n");
-
-    //sprintf(buf,"]\n}\n");
-    //strcat(buff,buf);
-    //Serial.printf("** buff size %d\n",strlen(buff));
+   
     fileData += "]\n}\n";
 
     //Serial.print("RunTempConfig Done Send xml length :");Serial.println(strlen(tempXML));
     servoPosNew=0;
     ServoPosInc=0;
-    ClearUtilTimer(); 
+    ClearUtilTimerT(); 
     // turn off heater
     ProcessButtonHeaterPwr();
     // set servo back to 0
     servoPosNew=0;
+    // This resets state variables
+    rState->doConfig=false;
+    TEMP_CONFIG=false;
+    servoPos=0; // Reset servo
   } 
   appendFile(fileName.c_str(), fileData);
 }
@@ -235,8 +210,7 @@ void SetupConfigTest()
 {
   String fileName;
 
-  //char buff[64]= {'\0'};
-  //char * cdata_p=&buff[0];
+  
   Serial.printf("SetupConfigTest\n");
   String fileData="{\n\"Configuration Date\": ";
   if (HEATGUNHIGH)
@@ -248,14 +222,11 @@ void SetupConfigTest()
   {
     deleteFile(fileName.c_str());
   }
-  //sprintf(buff, "\0");
-  //strcpy(buf, "{\n\"Configuration Date\": ");
-  //strcat(buff,buf);
+  
   fileData += "\"" + get_date_string() + "\"";
   fileData += "\n\"File Name\" : \"" + fileName + "\","; 
-  fileData += ",\n\"steps\": [\n";
-  //sprintf(buf, "\"%s\",\n\"steps\": [\n",get_date_string().c_str());
-  //strcat(buff,buf);
+  fileData += "\n\"steps\": [\n";
+  
   writeFile(fileName.c_str(), fileData);
   //appendFile(fileName.c_str(), cdata_p);
 
@@ -263,8 +234,8 @@ void SetupConfigTest()
  
   tempTotalC=0;
   tempTotalF=0;
-  ServoPosInc=SERVO_MAX_STEPS/ConfigMaxSteps;
- // Serial.print("SetupConfigTest ServoPosInc =");Serial.println(ServoPosInc);
+  ServoPosInc=SERVO_MAX_STEPS/(ConfigMaxSteps+1);
+  Serial.printf("SetupConfigTest MaxSteps = %d ServoPosInc = %d\n",ConfigMaxSteps,ServoPosInc);
  // Serial.print("SetupConfigTest ServoPos =");Serial.println(servoPos);
   servoPosNew=servoPos+ServoPosInc;
   //Serial.print("SetupConfigTest ServoPosNew =");Serial.println(servoPosNew);
@@ -290,19 +261,20 @@ void ProcessTempConfig(AsyncWebServerRequest *request) {
     ConfigSteps = ConfigMaxSteps;
     ConfigStep=0;
     SetupConfigTest();
-    SetupUtilTimer();
+    //SetupUtilTimer();
     // set the timer start value
     ConfigTimerMin=0;
     ConfigTimerSec=20;
     ConfigElaspedTime=0;// in seconds
     
-    ConfigTimerValue = ConfigTimerStartValue;
+    UtilTimerValue = ConfigTimerStartValue;
     //timerAlarm(UtilTimer, 1000000, true,0);
-     timerAlarmEnable(UtilTimer);
-     timerStart(UtilTimer);
+    // timerAlarmEnable(UtilTimer);
+    // timerStart(UtilTimer);
+    SetupUtilTimerT();
     
   } else {
-    ClearUtilTimer();
+    ClearUtilTimerT();
     rState->doConfig = false;
     // turn off heater
     ProcessButtonHeaterPwr(request);
