@@ -6,22 +6,29 @@
 #include "FileSystemFunctions.h"
 #include "UtilityFunctions.h"
 #include "ConfigTemp.h"
-// ISR for RoastTimer
-void IRAM_ATTR onRoastTimer() {
-  //Serial.printf("onRoastTimer() TimerValue = %d\n",TimerValue);
-  if (TimerValue <= 0)
-  {
-    Serial.println("onRoastTimer() Timer Stop!!! ");
-    timerStop(RoastTimer);
-    //new way timerAlarm(RoastTimer, 0 , false,0);
-    timerAlarmDisable(RoastTimer);
-  }
-  else
-  {
-    TimerValue--;
-  }
-  xSemaphoreGiveFromISR(roastTimerSemaphore, NULL);
+// Callback for Ticker RoastTimerT
+// just decrement the value and send semaphore
+void onRoastTimerT(int * val) {
+  //Serial.printf("OnUtilTimerT val = %d or %d \n", val, &val);
+  val--;
+  TimerValue--;
+  xSemaphoreGiveFromISR(roastTimerTSemaphore, NULL);
 }
+
+void SetupRoastTimerT()
+{
+  // Using Ticker timer so things don't crash
+  // should be able to just re-attach to call back?
+  RoastTimerT.attach_ms(1000,onRoastTimerT,&TimerValue);
+}
+
+void ClearRoastTimerT()
+{
+  // just have to detach
+  RoastTimerT.detach();
+  Serial.printf("ClearRoastTimerT detached.\n");
+}
+
 
 
 // This should start the whole process
@@ -115,16 +122,7 @@ void ProcessButtonRoastStart(AsyncWebServerRequest *request) {
   #endif
 }
 
-#ifndef NEW_WIFI
-void ProcessStartPreHeat()
-#else
-void ProcessStartPreHeat(AsyncWebServerRequest *request)
-#endif
-{
-  Serial.println("ProcessStartPreHeat() call SetupPreheatTimer ");
-  SetupUtilTimer();
-  Serial.println("ProcessStartPreHeat() Done ");
-}
+
 
 #ifndef NEW_WIFI
 void ProcessMinButton_0() {
@@ -440,6 +438,8 @@ void ProcessButtonHeaterPwr(AsyncWebServerRequest *request) {
   #endif
 }
 
+// This function only starts the Roast Timer
+// It doesn't control any of the I/O
 #ifndef NEW_WIFI
 void ProcessButtonTimerStart() {
 #else
@@ -450,8 +450,9 @@ void ProcessButtonTimerStart(AsyncWebServerRequest *request) {
   // if 1 start timer
   if (rState->timerStart)
   {
-    SetupRoastTimer();
+    //SetupRoastTimer();
     // get the timer start value
+    tempSamples=5;
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     TimerValue = TimerStartValue;
     //timerAlarm(RoastTimer,TimerValue, false,0);
@@ -466,9 +467,10 @@ void ProcessButtonTimerStart(AsyncWebServerRequest *request) {
     rState->roast=true;
     Serial.printf("Button Timer Start Roast TimerValue %d \n",TimerValue);
     //new way timerAlarm(RoastTimer,1000000,true,0);
-    timerAlarmEnable(RoastTimer); /// old way
+    //timerAlarmEnable(RoastTimer); /// old way
     //timerAlarmWrite(RoastTimer,1000000,true);
-    timerStart(RoastTimer);
+    //timerStart(RoastTimer);
+    SetupRoastTimerT();
   }
   else
   {
@@ -476,7 +478,7 @@ void ProcessButtonTimerStart(AsyncWebServerRequest *request) {
     Serial.printf("Button Timer reset Start Roast TimerValue %d\n",TimerValue);
     TimerStartValue = TimerMin0 * 60 + TimerSec0;
     TimerValue = TimerStartValue;
-    ClearRoastTimer();
+    ClearRoastTimerT();
     rState->first=true;
     rState->roast=false;
     Serial.printf("Button Timer  Stop timer %d\n",rState->timerStart);
@@ -538,14 +540,27 @@ void ProcessPreheatTimerStart(AsyncWebServerRequest *request) {
   // if 1 start timer
   if (rState->preheatTimerStart)
   {
+    // get the timer start value
+    PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
     rState->last=false; // this ensures that process keeps going, the second time
     // If just doing preheat set up log
+    if (PreheatTimerStartValue <= 0) {
+      Serial.print("ProcessPreheatTimerStart Preheat Timer Not SET!: "); Serial.println(PreheatTimerStartValue);
+      rState->preheatTimerStart=false;
+      rState->preheat=false;
+#ifndef NEW_WIFI
+      Server.send(200, "text/plain", "Timer Not Set"); //Send web page
+#else
+      if (request)
+        request->send(200,"Preheat Timer Not Set", "text/plain"); //Send web page
+#endif
+      return;
+    }
     if (!rState->doRoast)
 	    SetupRoastingLog(true);
     //Set servo position
     PreheatServoPos=getServoPos(PreheatTemp);
-    // get the timer start value
-    PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
+    
     // If there is a sort preheat time (testing)
     if (PreheatTimerStartValue>0 && PreheatTimerStartValue <= tempSamples)
     {
@@ -567,32 +582,24 @@ void ProcessPreheatTimerStart(AsyncWebServerRequest *request) {
       // Position servo to proper temp
       servoPosNew=PreheatServoPos;
       PreheatTimerValue = PreheatTimerStartValue;
-      
+      UtilTimerValue = PreheatTimerStartValue;
       Serial.printf("ProcessPreheatTimerStart Preheat Starting Util Timer Seconds: %d  \n",PreheatTimerStartValue);
       // new way timerAlarm(UtilTimer,1000000,true,0);
       
       //timerAlarmEnable(UtilTimer); // orig way
-      SetupUtilTimer();
+      //SetupUtilTimer();
+      SetupUtilTimerT();
       printf("AfterAlarmEnable");
       //timerStart(UtilTimer);
       //printf("After TimerStart");
-    } else {
-      Serial.print("ProcessPreheatTimerStart Preheat Timer Not SET!: "); Serial.println(PreheatTimerStartValue);
-      rState->preheatTimerStart=false;
-      rState->preheat=false;
-#ifndef NEW_WIFI
-      Server.send(200, "text/plain", "Timer Not Set"); //Send web page
-#else
-      if (request)
-        request->send(200,"Preheat Timer Not Set", "text/plain"); //Send web page
-#endif
-    }
+    } 
   }
   else
   {
     //reset timer display
     PreheatTimerStartValue = PreTimerMin * 60 + PreTimerSec;
     PreheatTimerValue = PreheatTimerStartValue;
+    UtilTimerValue = PreheatTimerStartValue;
     // if not roasting turn heater off and reset servo position
     if( !rState->doRoast)
     {
@@ -601,7 +608,7 @@ void ProcessPreheatTimerStart(AsyncWebServerRequest *request) {
         ProcessButtonHeaterPwr();
       servoPosNew=0;
     }
-    ClearUtilTimer();
+    ClearUtilTimerT();
     rState->preheat=false;
     Serial.print("ProcessPreheatTimerStart Preheat Timer Button  Stop timer "); Serial.println(rState->preheatTimerStart);
   }
@@ -824,22 +831,21 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
   // but it broke the logging stuff Didn't put in the 
   // "preheat_steps":[  or "roast_steps":[ t
   String fileName;
-  //char buff[128]= {'\0'};
-  //char * cdata_p=&buff[0];
+  
   String fileData;
   static bool endPreheat=false;
   int buflen=0;
   int t=0;
   while (1)
   {
-    if(xSemaphoreTake(roastTimerSemaphore, 0) == pdTRUE)
+    if(xSemaphoreTake(roastTimerTSemaphore, 0) == pdTRUE)
     {
       //WHENDEBUG(1)
       //{
         Serial.printf("---UpdateRoastState Semaphore taken\n");
-        Serial.printf("---UpdateRoastState file: %s doRoast %d roast %d first %d last %d preheat %d stop %d TimerValue %d PreheatTimerValue %d tempSamples %d\n",
+        Serial.printf("---UpdateRoastState file: %s doRoast %d roast %d first %d last %d preheat %d stop %d TimerValue %d UtilTimerValue %d tempSamples %d\n",
 		    state->fileName.c_str(),state->doRoast,state->roast,state->first,
-		    state->last,state->preheat,state->stopit,TimerValue,PreheatTimerValue,tempSamples);
+		    state->last,state->preheat,state->stopit,TimerValue,UtilTimerValue,tempSamples);
       //}
       fileName=state->fileName;//RoastLogFile;
       fileData="";
@@ -851,30 +857,20 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
         state->last=true;
         state->timerStart=false;
         tempSamples=10;
-        ClearRoastTimer();
+        ClearRoastTimerT();
         //SetMachineState();
       }
      
 
-      if (TimerValue%tempSamples==0 && state->roast) // dont do update if roast was stopped
-      {
-        //sprintf(buff, "\0");
-	      //if (state->roast)
+      //if (TimerValue%tempSamples==0 && state->roast) // dont do update if roast was stopped
+      //{
+          //if (state->roast)
           //WHENDEBUG(1)
 	        //Serial.printf(" UpdateRoastState time  : %d ROASTing: %d preheat %d \n",TimerValue,state->roast, state->preheat);
-      }
-
-      if (PreheatTimerValue%tempSamples==0 && state->preheat) // dont do update if roast was stopped
-      {
-        //sprintf(buff, "\0");
-	      //if (state->preheat)
-          //WHENDEBUG(1)
-	          //Serial.printf(" UpdateRoastState time  : %d PREHEATing: %d preheat %d \n",PreheatTimerValue,state->roast, state->preheat);
-      }
-
-      if (TimerValue%tempSamples==0 && state->roast) //|| 
-	      //(PreheatTimerValue%tempSamples == 0 && state->preheat)) // dont do update if roast was stopped
-      {
+      //}
+      
+      if (TimerValue%tempSamples==0 && state->roast)  
+	    {
 	                      
         if (state->roast)//ROAST) 
         {
@@ -884,14 +880,12 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	          state->first=false;
             //WHENDEBUG(1)
               Serial.printf("** First Roast step ***\n");
-            //sprintf(buf, "\n\t\"roast_steps\": [\n");
-            //strcat(buff,buf);
+           
             fileData += "\n\t\"roast_steps\": [\n";
             //WHENDEBUG(5)
               //Serial.printf("** buff size %d\n",strlen(buff));
           }
-          //sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-          //strcat(buff,buf);
+          
           fileData += "\t{\n\t\t\"ROAST_TIME\": " + String(TimerValue) + ",\n";
           // this gets added to each entry
           
@@ -908,8 +902,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
         {
           // If stopped in the middle add one more of these to 
           // make json file valid 
-          //sprintf(buf, "\t{\n\t\t\"ROAST_TIME\": %d,\n", TimerValue);
-          //strcat(buff,buf);
+         
           fileData += "\t{\n\t\t\"ROAST_TIME\": " + String(TimerValue) + ",\n";
           fileData += "\t}";
           
@@ -922,9 +915,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
           //WHENDEBUG(1)
             //Serial.printf("UpdateRoastState adding comma file first %d endPreheat %d last %d\n",
 		        //state->first,endPreheat,state->last);
-          //sprintf(buf, ",\n");
-          //strcat(buff,buf);
-          //buflen+=strlen(buf);
+         
           fileData += ",\n";
           //WHENDEBUG(1)
             //Serial.printf("** buff size %d\n",strlen(buff));
@@ -939,12 +930,11 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	          state->preheat=false;
 	          state->last=false;
 	        }
-          //sprintf(buf, "\n\t],\n");
-          //strcat(buff,buf);
+          
           fileData += "\n\t],\n";
           //WHENDEBUG(1)
             //Serial.printf("** buff size %d\n",strlen(buff));
-          //buflen+=strlen(buf);
+          
 
         } 
         else 
@@ -959,7 +949,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
         if (state->fileName.length() > 0)
           appendFile(fileName.c_str(), fileData);
           fileData="";
-	// Turn off stuff when done
+	      // Turn off stuff when done
 	      if(state->doRoast && state->roast && state->last)
 	      {
           //WHENDEBUG(1)
@@ -974,21 +964,21 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	      }
       } // end of update to roasting log
     }
-    else if(xSemaphoreTake(utilTimerSemaphore, 0) == pdTRUE)
+    else if(xSemaphoreTake(utilTimerTSemaphore, 0) == pdTRUE)
     {
       //WHENDEBUG(1)
       //{
-        Serial.printf("UpdateRoastState---UtilTimer Semaphore taken\n");
+        Serial.printf("UpdateRoastState---UtilTimerT Semaphore taken\n");
         Serial.printf("---UpdateRoastState file: %s doRoast %d roast %d first %d last %d \
-          preheat %d stop %d TimerValue %d PreheatTimerValue %d tempSamples %d, Config %d\n",
+          preheat %d stop %d TimerValue %d UtilTimerValue %d tempSamples %d, Config %d ConfigStep %d \n",
 		    state->fileName.c_str(),state->doRoast,state->roast,state->first,
-		    state->last,state->preheat,state->stopit,TimerValue,PreheatTimerValue,tempSamples,state->doConfig);
+		    state->last,state->preheat,state->stopit,TimerValue,UtilTimerValue,tempSamples,state->doConfig, ConfigStep);
         fileData = "";
         fileName=state->fileName;//RoastLogFile;
 #ifdef CONFIG_PAGE
       if (TEMP_CONFIG)
       {
-        if (ConfigTimerValue == 0)
+        if (UtilTimerValue == 0)
         {
 	        Serial.print("In UpdateRoastState -- Config -- utilTimerSemaphore is true finished step " );Serial.println(ConfigStep);
 	        RunTempConfig(++ConfigStep);
@@ -1000,6 +990,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	        tempTotalC+=tempC;
 	        tempTotalF+=tempF;
         }
+        return;
       }
 
       
@@ -1008,11 +999,11 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	    {
          //WHENDEBUG(1)
         Serial.printf("UpdateRoastState Should be done PREHEAT only!\n");
-        ClearUtilTimer();
+        ClearUtilTimerT();
 	      SetMachineState();
 	    }
 
-      if (PreheatTimerValue%tempSamples == 0 && state->preheat) // dont do update if roast was stopped
+      if (UtilTimerValue%tempSamples == 0 && state->preheat) // dont do update if roast was stopped
       {
 	      
         if (state->preheat)//PREHEAT)
@@ -1027,7 +1018,7 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
             Serial.println("*** First preheat step *** ");
           }
           
-	        fileData += "\t{\n\t\t\"PREHEAT_TIME\": " + String(PreheatTimerValue) + ",\n";
+	        fileData += "\t{\n\t\t\"PREHEAT_TIME\": " + String(UtilTimerValue) + ",\n";
           
           // this gets added to each entry
 
@@ -1042,18 +1033,18 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
           fileData += "\t}";
         }
         // put in a comma before next entry 
-        if ( PreheatTimerValue > 0 )
+        if ( UtilTimerValue > 0 )
         {
           fileData += ",\n";
           
         }
         // Transition between preheat and roast
       //
-      if(state->preheat && PreheatTimerValue <=0)
+      if(state->preheat && UtilTimerValue <=0)
       {
         //WHENDEBUG(1)
         Serial.printf("UpdateRoastState Preheat done preheat time : %d Servo Pos %d FinishServoPos : %d timerstart %d\n",
-            PreheatTimerValue,servoPos,FinishServoPos, state->timerStart);
+            UtilTimerValue,servoPos,FinishServoPos, state->timerStart);
         state->last=true;
         state->preheatTimerStart=false;
         
@@ -1068,16 +1059,15 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 	      }
          
         // close preheat steps array
-        if (!state->doRoast)
+        // this gets done in CloseRoastLog fileData += "\n\t]\n}"; // No Comma and close json if only doing preheat
+        
+        //else
+        if (state->doRoast)
         {
-          // only doing preheat reset last
-          //state->last=false;
-          fileData += "\n\t]\n}"; // No Comma and close json if only doing preheat
-        }
-        else
           fileData += "\n\t],\n";
+        }
         Serial.println("UpdateRoastState preheat -- here");
-        //ClearUtilTimer();
+        ClearUtilTimerT();
         Serial.println("UpdateRoastState preheat here");
         //SetMachineState();
 	      if (state->doRoast && !state->timerStart)
@@ -1111,37 +1101,10 @@ void UpdateRoastState(void * rState) //bool roast, bool first , bool last, bool 
 #endif
     } // end of Util Semaphore taken
     
+    
     vTaskDelay(250 / portTICK_PERIOD_MS);
   }// end of while
   Serial.println("UpdateRoastState out of while loop");
 }
 
-void SetupRoastTimer()
-{
-  //timerDetachInterrupt(UtilTimer); // this causes exception
- // Setup for timer timer 0 prescaler 80 count up (true)
-  RoastTimer = timerBegin(0, 80,true); // orig way
-  // new way RoastTimer = timerBegin(1000000);
-  // Attach to interrupt handler
-  // new way timerAttachInterrupt(RoastTimer, &onRoastTimer );
-  timerAttachInterrupt(RoastTimer, &onRoastTimer , true); // orig way
-  //Specify timer timeout value
-  // 1000000 microseconds = 1 second
-  timerAlarmWrite(RoastTimer, 1000000 ,true);
-  Serial.println("SetupRoastTimer() ");
-}
 
-
-void ClearRoastTimer()
-{
-  Serial.println("ClearRoastTimer() ");
-  if (RoastTimer)
-  {
-    timerStop(RoastTimer);
-    //new way timerAlarm(RoastTimer,0,false,0); //Does this disable it?
-    timerAlarmDisable(RoastTimer);
-    // Detach to interrupt handler
-    timerDetachInterrupt(RoastTimer);
-  }
-  Serial.println("ClearRoastTimer() ");
-}

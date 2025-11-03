@@ -1,11 +1,14 @@
 //Header file for roaster controls functions
-void IRAM_ATTR onRoastTimer();
+//void IRAM_ATTR onRoastTimer();
+void onRoastTimerT(int *val);
+void SetupRoastTimerT();
+void ClearRoastTimerT();
 void UpdateRoastState(void *);
 void readConfigData();
 void SetupRoastingLog(bool onlyPreheat=false);
 void CloseRoastingLog(bool manualStop=false);
-void SetupRoastTimer();
-void ClearRoastTimer();
+//void SetupRoastTimer();
+//void ClearRoastTimer();
 #ifndef NEW_WIFI
 void ProcessButtonRoastStart();
 void ProcessMinButton_0();
@@ -25,7 +28,7 @@ void ProcessButtonTimerStart();
 void ProcessButtonTimerAdd();
 void ProcessButtonTimerSub();
 void ProcessPreheatTimerStart();
-void ProcessStartPreHeat();
+
 String SetRoastFilename();
 void DownloadConfigData();
 void DownloadLogData();
