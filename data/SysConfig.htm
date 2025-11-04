@@ -428,7 +428,7 @@ function ButtonPressEvent(sendstr){
 	} else if (sendstr == "RESET_WIFI") {
 		if (!confirm("Do you really want to reset the Wifi Connection Data ? The system will reboot into AP mode")) {
             return;
-	}
+		}
 	} else {
 		xhttp.open("POST",sendstr,true);
     }
