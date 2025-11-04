@@ -1,11 +1,3 @@
-#include <WiFiManager.h>
-#include <strings_en.h>
-#include <wm_consts_en.h>
-#include <wm_strings_en.h>
-#include <wm_strings_es.h>
-
-
-
 
 #include "ProjectDefines.h"
 //#include<Arduino.h>
@@ -32,30 +24,25 @@ python3 .arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool.py --chip auto 
 #elif defined(ARDUINO_ARCH_ESP32)
 // #include <WiFi.h>
 #include <ESPmDNS.h>
-// #ifndef WEBSERIAL
-//  #include <WebServer.h>
-// #endif
+
 #endif
+
 
 #include "LittleFS.h"
 
-#ifdef WEBSERIAL
-//#include <AsyncTCP.h>
-//#include <ESPAsyncWebServer.h>
-//#include <WebSerial.h>
-#endif
-
-#ifdef AUTO_CONNECT
-//#include <AutoConnect.h>
-#endif
 
 #ifdef NEW_WIFI
-//#include <AsyncTCP.h>
-//#define WEBSERVER_H
-#include <ESPAsyncWebServer.h>
+
+
   #ifdef WIFI_MANAGER
-  //  #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+  #include <WiFiManager.h>
+  
+  #include <wm_consts_en.h>
+  #include <wm_strings_en.h>
+  #include <wm_strings_es.h>
   #endif
+  #include <ESPAsyncWebServer.h>
+  #include <ElegantOTA.h>
   #ifdef ASYNC_WIFI
    //#include <WiFi.h>
    //#include <WiFiClient.h>
@@ -831,6 +818,7 @@ void setup() {
       request->send(404);
     });
   //FIXME
+  ElegantOTA.begin(&Server);    // Start ElegantOTA
   if(WiFi.getMode() == WIFI_MODE_STA)
   {
     Serial.println("--- Starting Web Server ---");
