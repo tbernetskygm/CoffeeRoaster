@@ -366,7 +366,7 @@ void SendRoastLogData(AsyncWebServerRequest *request)
   // Handle download if download=true
   if (download.equals("true"))
   {
-    Serial.printf("Download file <%s>\n",reqFile);
+    Serial.printf("Downloading file <%s>\n",reqFile.c_str());
     loadFromFS(request,reqFile,download);
   }
   else
