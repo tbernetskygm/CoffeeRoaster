@@ -511,27 +511,36 @@ void handleFileUpload() {
   }
 }
 #else
+
 void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) 
 {
-
-  if (request->url() != "/UploadFile") {
-    return;
-  }
-  String UploadFile;
-  Serial.printf("Upload[%s]: index=%u, len=%u, final=%d\n", filename.c_str(), index, len, final);
-
-  String path ;//= request->arg(0);
-  if(request->hasParam("FileName"))
-    path = request->getParam("FileName")->value();
   
-  Serial.println("handleFileUpload: path=" + path);
-  if (LittleFS.exists(path) && index == 0) {
-      deleteFile((char *)path.c_str());
+  //if (!request->url().equals("/UploadFile")) {
+   // // Can't open file send bad response
+   // request->send(400, "text/plain", "Request url is wrong! " + request->url() + " Could Not be opened for writing"); // just to make server happy
+  //}
+  String UploadFile;
+  Serial.printf("--- handleFileUpload[%s]: index=%u, len=%u, final=%d\n", filename.c_str(), index, len, final);
+  Serial.printf("Content length %d\n",request->header("Content-Length").toInt());
+  String path ;//= request->arg(0);
+  //if(request->hasParam("FileName"))
+    //path = request->getParam("FileName")->value();
+  
+  Serial.println("handleFileUpload: filename=" + filename);
+  if (LittleFS.exists(filename) && index == 0) {
+      deleteFile((char *)filename.c_str());
   }
   //Serial.print("Upload: Opening upload.filename: "); 
   if (!index) {
-    Serial.print("Upload: Opening upload.filename: "); Serial.println(path.c_str());
-    request->_tempFile = _FSYS.open(path.c_str(), FILE_WRITE);
+    Serial.print("Upload: : Creating "); Serial.println(filename.c_str());
+    
+   request->_tempFile = openFile(filename, "w");
+    
+    
+
+    if (!request->_tempFile) {
+          request->send(400, "text/plain", "File not available for writing");
+    }
   }   
   
   if (request->_tempFile) {
@@ -539,7 +548,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
   }
   else {
     // Can't open file send bad response
-    request->send(400, "text/plain", "File " + path + " Could Not be opened for writing"); // just to make server happy
+    request->send(400, "text/plain", "File " + filename + " Could Not be opened for writing"); // just to make server happy
   }
 
   
@@ -553,7 +562,7 @@ void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t in
   //Serial.println(upload.filename.c_str());
  
  
-  request->send(200, "text/plain", "File " + path + " Might be uploaded"); // just to make server happy
+  request->send(200, "text/plain", "File " + filename + " Might be uploaded"); // just to make server happy
 }
 
 #endif
