@@ -9,9 +9,7 @@
 #define Tempservo
 #define THERMOCOUPLE
 //#define OTA_T
-#define _RELEASE 2
-#define _VERSION 0
-#define _REVISION 1
+
 #define WHENDEBUG(x) if( (x) & DebugNum )
 #define NEW_WIFI
 #define WIFI_MANAGER
