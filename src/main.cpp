@@ -1,7 +1,9 @@
 
 #include "ProjectDefines.h"
 //#include<Arduino.h>
-
+#define _RELEASE 3
+#define _VERSION 0
+#define _REVISION 0
 #include <ArduinoJson.h>
 #include <time.h>
 #include <Ticker.h>
@@ -419,6 +421,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   rState->utilTimerIntSetup=false;
+  Serial.printf("Starting Version %d.%d.%d\n",_RELEASE,_VERSION,_REVISION);
 
 #ifndef NEW_WIFI
   Config.apid = "CoffeeRoaster";
@@ -724,7 +727,7 @@ void setup() {
     Server.on("/UploadFile", HTTP_POST, [](AsyncWebServerRequest * request){
       request->send(200);
     },handleFileUpload);//FileSystemFunctions.cpp
-
+   
     Server.on("/DEBUG_VAL",HTTP_POST, SetDebug);
     Server.on("/RESET_WIFI",HTTP_POST, ResetWiFi);
   //}
@@ -854,7 +857,7 @@ void setup() {
 
 void loop() {
   
-
+  ElegantOTA.loop();
  
 }
 
