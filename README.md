@@ -4,9 +4,11 @@ Code for ESP32 Coffee roaster. Includes servo motor,thermocouple, file upload/do
 This is an amlagamation of lots of other peoples demos and sample code.
 Started with zero knowledge of how to program an ESP32 and just kept adding bells and whistles.
 
-The project was built with arduino ide, and uses several other libraries.
+Originally, the project was built with arduino ide, and uses several other libraries.
 Autoconnect to handle wifi signon functions.
 Webserver for well the webserver portion. SPIFFS, ArduinoJson ESP32Servo, max6675, ESM32PWM.
+
+For MK2 I have switched it to use Platformio as the development platforn. I have also converted it to use ESP32AsyncWebserver, along with WiFi Manager to not have to hardcode wifi credentials. Also added elegantOTA to handle OTA updates of firmware. So far it seems to be more reliable ( doesn't crash) but I have not tried roasting any coffee with this new version yet.
 
 The code has capability to connect via wifi without needing to hardcode any credentials using Autoconnect.
 It provides a web server used to control the roasting process. A preheat timer is available.
