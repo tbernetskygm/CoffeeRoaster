@@ -3,7 +3,7 @@
 //#include<Arduino.h>
 #define _RELEASE 3
 #define _VERSION 0
-#define _REVISION 0
+#define _REVISION 1
 #include <ArduinoJson.h>
 #include <time.h>
 #include <Ticker.h>
@@ -821,6 +821,7 @@ void setup() {
       request->send(404);
     });
   //FIXME
+  ElegantOTA.setAutoReboot(true);
   ElegantOTA.begin(&Server);    // Start ElegantOTA
   if(WiFi.getMode() == WIFI_MODE_STA)
   {
