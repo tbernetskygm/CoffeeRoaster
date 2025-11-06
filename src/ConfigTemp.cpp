@@ -55,7 +55,7 @@ void RunTempConfig (int Step)
     
     fileData+= "\"TMPC\": " + String(tempAvgC) + ",\n";
     
-    fileData+= "\"POS\": " + String(servoPos) + ",\n";
+    fileData+= "\"POS\": " + String(servoPos) + "\n";
     ;
     if (Step > ConfigMaxSteps) 
     {
@@ -223,7 +223,7 @@ void SetupConfigTest()
     deleteFile(fileName.c_str());
   }
   
-  fileData += "\"" + get_date_string() + "\"";
+  fileData += "\"" + get_date_string() + "\",";
   fileData += "\n\"File Name\" : \"" + fileName + "\","; 
   fileData += "\n\"steps\": [\n";
   
